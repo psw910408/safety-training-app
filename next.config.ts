@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['sqlite3'],
   outputFileTracingIncludes: {
-    '/**': ['./jongno.db', './samhwa.db'],
+    '/**': ['./jongno.db', './samhwa.db', './public/templates/**/*'],
   },
 };
 

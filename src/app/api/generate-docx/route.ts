@@ -11,8 +11,8 @@ export async function POST(req: Request) {
       photoBase64, workerSigBase64, managerSigBase64
     } = await req.json();
 
-    // 템플릿 파일 (Vercel 배포 시 process.cwd() 기반 경로 사용)
-    const templatePath = path.resolve(process.cwd(), 'src/templates/recruit_training_template.docx');
+    // 템플릿 파일 경로 (Next.js serverless 환경에서 접근을 위해 public 에디렉토리 사용)
+    const templatePath = path.join(process.cwd(), 'public', 'templates', 'recruit_training_template.docx');
     
     if (!fs.existsSync(templatePath)) {
       console.error('Template not found at:', templatePath);
