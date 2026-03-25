@@ -34,7 +34,7 @@ export default function Home() {
     if (!validatePhone()) return;
     
     if (type !== 'schedule') {
-      const pass = prompt('해당 교육 메뉴는 관리자 전용입니다. 승인 코드를 입력하세요. (초기코드: 0000)');
+      const pass = prompt('🚨 해당 교육 메뉴는 관리자 전용입니다. 승인 코드를 입력하세요.');
       if (pass !== '0000') {
         alert('관리자 전용 구역입니다. 문의사항은 박상우 개발자에게 문의하세요!');
         return;
