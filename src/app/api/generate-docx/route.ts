@@ -47,10 +47,19 @@ export async function POST(req: Request) {
 
     const imageModule = new ImageModule(opts);
 
+    // 사용자가 워드에 {%사진%} 등 괄호를 1개만 친 경우를 대비하여 2개로 강제 변환 ({{%사진%}})
+    const xmlFile = zip.file("word/document.xml");
+    if (xmlFile) {
+      let xml = xmlFile.asText();
+      xml = xml.replace(/\{%([^}]+)%\}/g, '{{%$1%}}');
+      zip.file("word/document.xml", xml);
+    }
+
     const doc = new Docxtemplater(zip, {
       modules: [imageModule],
       paragraphLoop: true,
       linebreaks: true,
+      delimiters: { start: '{{', end: '}}' }
     });
 
     // 템플릿에 들어갈 데이터 (괄호 태그명과 100% 일치해야 함)
