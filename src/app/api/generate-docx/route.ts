@@ -45,11 +45,29 @@ export async function POST(req: Request) {
 
     const imageModule = new ImageModule(opts);
 
-    // 사용자가 워드에 {%사진%} 등 괄호를 1개만 친 경우를 대비하여 2개로 강제 변환 ({{%사진%}})
+    // 사용자가 워드에 {%사진%} 처럼 닫는 %가 들어간 태그를 교정 ({{%사진}} 형태여야 함)
     const xmlFile = zip.file("word/document.xml");
     if (xmlFile) {
       let xml = xmlFile.asText();
-      xml = xml.replace(/\{%([^}]+)%\}/g, '{{%$1%}}');
+      // {%태그%} -> {{%태그}} 로 변환하여 docxtemplater 모듈 충돌 해결
+      xml = xml.replace(/\{%([^%{}]+)%\}/g, '{{%$1}}');
+      
+      // 자동 루프 추가: 표의 "이름" 칸을 감싸는 row에 {{#근로자}} 자동 주입
+      const rows = xml.split('<w:tr ');
+      for (let i = 0; i < rows.length; i++) {
+          if (rows[i].includes('이름') && !rows[i].includes('#근로자')) {
+              let firstTcIndex = rows[i].indexOf('<w:tc>');
+              if (firstTcIndex !== -1) {
+                  rows[i] = rows[i].slice(0, firstTcIndex + 6) + '<w:p><w:r><w:t>{{#근로자}}</w:t></w:r></w:p>' + rows[i].slice(firstTcIndex + 6);
+              }
+              let lastTcCloseIndex = rows[i].lastIndexOf('</w:tc>');
+              if (lastTcCloseIndex !== -1) {
+                  rows[i] = rows[i].slice(0, lastTcCloseIndex) + '<w:p><w:r><w:t>{{/근로자}}</w:t></w:r></w:p>' + rows[i].slice(lastTcCloseIndex);
+              }
+          }
+      }
+      xml = rows.join('<w:tr ');
+
       zip.file("word/document.xml", xml);
     }
 
@@ -85,7 +103,7 @@ export async function POST(req: Request) {
     const 사진6 = photos && photos[5] ? photos[5] : '';
 
     // 템플릿 데이터 매핑
-    const templateData = {
+    const templateData: Record<string, any> = {
       현장명: site || '',
       교육일자: trainingDate || '',
       교육시간: `${startTime}~${endTime}`,
