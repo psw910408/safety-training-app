@@ -46,6 +46,7 @@ const SignatureBox = ({
       <div style={{ border: '2px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#fff' }}>
         <SignatureCanvas 
           ref={sigRef} 
+          clearOnResize={false}
           onEnd={handleEnd}
           canvasProps={{ className: 'sigCanvas', style: { width: '100%', height: '120px', touchAction: 'none' } }} 
         />
