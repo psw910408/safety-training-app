@@ -79,10 +79,16 @@ export async function POST(req: Request) {
       nullGetter: (part: any) => { return ""; } // 값이 없어도 에러 대신 빈칸 표시
     });
 
-    // 남/여 통계 계산
+    // 남/여 통계 및 참석/불참 계산
     const totalCount = workers.length;
-    const maleCount = workers.filter((w: any) => w.gender === '남').length;
-    const femaleCount = workers.filter((w: any) => w.gender === '여').length;
+    // 참석자
+    const attendedWorkers = workers.filter((w: any) => w.attendance === '참석');
+    const attendedMale = attendedWorkers.filter((w: any) => w.gender === '남').length;
+    const attendedFemale = attendedWorkers.filter((w: any) => w.gender === '여').length;
+    // 불참자
+    const absentWorkers = workers.filter((w: any) => w.attendance !== '참석');
+    const absentMale = absentWorkers.filter((w: any) => w.gender === '남').length;
+    const absentFemale = absentWorkers.filter((w: any) => w.gender === '여').length;
 
     // 근로자 배열 정리 (서명 이름 매칭)
     const 근로자 = workers.map((w: any) => ({
@@ -91,7 +97,7 @@ export async function POST(req: Request) {
       직종: w.role || '',
       이름: w.name,
       성별: w.gender,
-      본인서명: w.workerSigBase64 || ''
+      본인서명: w.attendance === '참석' ? (w.workerSigBase64 || '') : '' // 불참 시 서명 비우기
     }));
 
     // 사진 매칭 (최대 6장)
@@ -109,14 +115,14 @@ export async function POST(req: Request) {
       교육시간: `${startTime}~${endTime}`,
       
       대상계: totalCount,
-      대상남: maleCount,
-      대상여: femaleCount,
-      참석계: totalCount,
-      참석남: maleCount,
-      참석여: femaleCount,
-      불참계: 0,
-      불참남: 0,
-      불참여: 0,
+      대상남: attendedMale + absentMale,
+      대상여: attendedFemale + absentFemale,
+      참석계: attendedWorkers.length,
+      참석남: attendedMale,
+      참석여: attendedFemale,
+      불참계: absentWorkers.length,
+      불참남: absentMale,
+      불참여: absentFemale,
 
       담당서명: managerSigBase64 || '',
       소장서명: directorSigBase64 || '',

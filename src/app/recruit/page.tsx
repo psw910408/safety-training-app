@@ -11,6 +11,7 @@ interface WorkerInfo {
   role: string;
   name: string;
   gender: string;
+  attendance: string; // '참석' | '불참'
   workerSigBase64: string | null;
 }
 
@@ -66,7 +67,7 @@ export default function RecruitTrainingPage() {
 
   // 근로자 배열
   const [workers, setWorkers] = useState<WorkerInfo[]>([
-    { id: Date.now(), jobType: '미화', role: '', name: '', gender: '남', workerSigBase64: null }
+    { id: Date.now(), jobType: '미화', role: '', name: '', gender: '남', attendance: '참석', workerSigBase64: null }
   ]);
 
   // 사진 배열 (최대 6개)
@@ -77,7 +78,7 @@ export default function RecruitTrainingPage() {
   const [directorSigBase64, setDirectorSigBase64] = useState('');
 
   const addWorker = () => {
-    setWorkers(prev => [...prev, { id: Date.now(), jobType: '보안', role: '', name: '', gender: '남', workerSigBase64: null }]);
+    setWorkers(prev => [...prev, { id: Date.now(), jobType: '보안', role: '', name: '', gender: '남', attendance: '참석', workerSigBase64: null }]);
   };
 
   const removeWorker = (id: number) => {
@@ -126,7 +127,7 @@ export default function RecruitTrainingPage() {
       if (!workers[i].name) {
         alert(`[${i+1}번 근로자] 이름을 입력해주세요.`); return;
       }
-      if (!workers[i].workerSigBase64) {
+      if (workers[i].attendance === '참석' && !workers[i].workerSigBase64) {
         alert(`[${i+1}번 근로자] 서명을 마무리해주세요.`); return;
       }
     }
@@ -273,7 +274,7 @@ export default function RecruitTrainingPage() {
               
               <h4 style={{ margin: '0 0 16px 0', color: 'var(--primary-color)' }}>{index + 1}번 근로자</h4>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 'bold' }}>소속(직군)</label>
                   <select className="input-field" style={{ padding: '8px' }} value={worker.jobType} onChange={(e) => updateWorker(worker.id, 'jobType', e.target.value)}>
@@ -291,6 +292,13 @@ export default function RecruitTrainingPage() {
                     <option value="여">여성</option>
                   </select>
                 </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 'bold', color: 'var(--primary-color)' }}>참석 여부</label>
+                  <select className="input-field" style={{ padding: '8px', border: '2px solid var(--primary-color)' }} value={worker.attendance} onChange={(e) => updateWorker(worker.id, 'attendance', e.target.value)}>
+                    <option value="참석">참석</option>
+                    <option value="불참">불참 (휴가 등)</option>
+                  </select>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
@@ -304,7 +312,13 @@ export default function RecruitTrainingPage() {
                 </div>
               </div>
 
-              <SignatureBox label="근로자 본인 서명" onSave={(val) => updateWorker(worker.id, 'workerSigBase64', val)} />
+              {worker.attendance === '참석' ? (
+                <SignatureBox label="근로자 본인 서명" onSave={(val) => updateWorker(worker.id, 'workerSigBase64', val)} />
+              ) : (
+                <div style={{ padding: '16px', backgroundColor: '#fee2e2', borderRadius: '8px', textAlign: 'center', color: '#b91c1c', fontWeight: 'bold' }}>
+                  ❌ 불참 처리됨 (서명 생략) <br/><span style={{fontSize:'0.8rem', fontWeight:'normal'}}>※ 워드 문서 서명란에는 '불참' 이라 찍혀 출력됩니다.</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
