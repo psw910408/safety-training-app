@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     } = await req.json();
 
     // 템플릿 파일 (Vercel 배포 시 process.cwd() 기반 경로 사용)
-    const templatePath = path.resolve(process.cwd(), 'src/templates/CHM-ST-산안-006-근로자 채용시 교육.docx');
+    const templatePath = path.resolve(process.cwd(), 'src/templates/recruit_training_template.docx');
     
     if (!fs.existsSync(templatePath)) {
       console.error('Template not found at:', templatePath);
