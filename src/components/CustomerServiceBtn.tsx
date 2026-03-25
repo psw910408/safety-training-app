@@ -61,8 +61,8 @@ export default function CustomerServiceBtn() {
           </h3>
           <div style={{ marginBottom: '16px' }}>
             <p style={{ fontSize: '1rem', color: '#333', marginBottom: '8px' }}>
-              <span style={{ color: '#004494', fontWeight: '700', marginRight: '8px' }}>담당자</span> 
-              <span style={{ fontWeight: '500' }}>박상우</span>
+              <span style={{ color: '#004494', fontWeight: '700', marginRight: '8px' }}>개발자:</span> 
+              <span style={{ fontWeight: '500' }}>박상우 AI Pro</span>
             </p>
             <p style={{ fontSize: '1.2rem', color: '#111', fontWeight: '800', letterSpacing: '0.5px' }}>
               📞 010-3809-4753
