@@ -1,4 +1,3 @@
-import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import path from 'path';
 
@@ -9,6 +8,7 @@ const dbs: { [key: string]: Database | null } = {
 
 export async function getDb(site: 'jongno' | 'samhwa' = 'jongno') {
   if (!dbs[site]) {
+    const sqlite3 = require('sqlite3');
     dbs[site] = await open({
       filename: path.join(process.cwd(), `${site}.db`),
       driver: sqlite3.Database

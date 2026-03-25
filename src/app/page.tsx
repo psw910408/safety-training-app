@@ -22,14 +22,25 @@ export default function Home() {
     setPhone(value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const validatePhone = () => {
     if (!phone) {
       alert('휴대폰 번호를 입력해주세요.');
-      return;
+      return false;
     }
-    setLoading(true);
-    router.push(`/result?phone=${phone}&site=${site}`);
+    return true;
+  };
+
+  const handleAction = (type: string) => {
+    if (!validatePhone()) return;
+    
+    if (type === 'schedule') {
+      setLoading(true);
+      router.push(`/result?phone=${phone}&site=${site}`);
+    } else if (type === 'recruit') {
+      router.push('/recruit');
+    } else {
+      alert('준비 중입니다.');
+    }
   };
 
   return (
@@ -41,7 +52,7 @@ export default function Home() {
         <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>개인정보 보호를 위해 본인의 정보만 조회 가능합니다.</p>
       </div>
       
-      <form onSubmit={handleSubmit}>
+      <div>
         <div className="site-selector">
           <div 
             className={`site-option ${site === 'jongno' ? 'active' : ''}`}
@@ -57,7 +68,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '24px' }}>
           <input
             type="tel"
             className="input-field"
@@ -68,14 +79,54 @@ export default function Home() {
           />
         </div>
 
-        <button type="submit" className="btn" disabled={loading}>
-          {loading ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              조회 중...
-            </span>
-          ) : '조회하기'}
-        </button>
-      </form>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+          <button 
+            type="button" 
+            className="action-btn" 
+            onClick={() => handleAction('schedule')}
+            disabled={loading}
+          >
+            <div className="icon">📅</div>
+            근로자 일정조회
+          </button>
+          
+          <button 
+            type="button" 
+            className="action-btn" 
+            onClick={() => handleAction('recruit')}
+            disabled={loading}
+          >
+            <div className="icon">🔰</div>
+            채용시 교육
+          </button>
+          
+          <button 
+            type="button" 
+            className="action-btn" 
+            onClick={() => handleAction('msds')}
+            disabled={loading}
+          >
+            <div className="icon">🧪</div>
+            MSDS 교육
+          </button>
+          
+          <button 
+            type="button" 
+            className="action-btn" 
+            onClick={() => handleAction('special')}
+            disabled={loading}
+          >
+            <div className="icon">⚠️</div>
+            특별교육
+          </button>
+        </div>
+        
+        {loading && (
+          <div style={{ padding: '16px', textAlign: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>
+            조회 중...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

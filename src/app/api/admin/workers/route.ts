@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { calculateTrainings } from '@/lib/calc';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const site = request.nextUrl.searchParams.get('site') as 'jongno' | 'samhwa' || 'jongno';

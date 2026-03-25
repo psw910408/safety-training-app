@@ -201,3 +201,39 @@ body {
 .highlight-red { color: var(--danger-color); }
 .highlight-blue { color: var(--primary-color); }
 .highlight-orange { color: var(--warning-color); }
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 8px;
+  background: #fff;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  gap: 8px;
+}
+
+.action-btn:hover:not(:disabled) {
+  border-color: var(--accent-color);
+  background: rgba(0, 112, 243, 0.02);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 112, 243, 0.1);
+  color: var(--primary-color);
+}
+
+.action-btn:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.action-btn .icon {
+  font-size: 1.8rem;
+}
