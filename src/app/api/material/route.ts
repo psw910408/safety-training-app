@@ -5,30 +5,24 @@ const redis = new Redis(process.env.REDIS_URL || '');
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json(); // Array of items
+    const data = await req.json();
+    const { site, part, receiveDate, items } = data;
     
-    // items 배열을 받아서 각각 저장
-    const items = Array.isArray(data.items) ? data.items : [data];
+    // items 배열 전체를 하나의 배치(batch)로 묶어서 저장합니다.
+    const batchRecord = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+      site,
+      part,
+      receiveDate,
+      items // [{ id, materialName, specification, quantity, supplier, photoBase64 }]
+    };
     
-    const recordsToSave = items.map((item: any, index: number) => ({
-      id: Date.now().toString() + '-' + index,
-      site: data.site,
-      part: data.part,
-      receiveDate: data.receiveDate,
-      ...item,
-      createdAt: new Date().toISOString(),
-    }));
-
-    // Redis 리스트(lpush) 대신, 관리를 쉽게 하기 위해 문자열 배열로 관리하거나
-    // 각 항목을 lpush 합니다.
-    for (const record of recordsToSave) {
-      await redis.lpush('material_records', JSON.stringify(record));
-    }
+    await redis.lpush('material_records', JSON.stringify(batchRecord));
     
-    return NextResponse.json({ success: true, count: recordsToSave.length });
+    return NextResponse.json({ success: true, batchId: batchRecord.id });
   } catch (error) {
-    console.error('Material record save error:', error);
-    return NextResponse.json({ error: 'Failed to save record' }, { status: 500 });
+    console.error('Material record post error:', error);
+    return NextResponse.json({ error: 'Failed to insert record' }, { status: 500 });
   }
 }
 
@@ -40,8 +34,31 @@ export async function GET(req: Request) {
     const yearMonth = searchParams.get('month'); // YYYY-MM
     
     const rawRecords = await redis.lrange('material_records', 0, -1);
+    
     let records = rawRecords.map(r => JSON.parse(r));
     
+    // 과거(단일 아이템) 호환성 보정을 위해 items가 없는 경우 강제로 items 배열 스키마로 래핑
+    records = records.map(r => {
+      if (!r.items) {
+        return {
+          id: r.id,
+          site: r.site,
+          part: r.part,
+          receiveDate: r.receiveDate,
+          items: [{
+            id: r.id + '_sub',
+            materialName: r.materialName,
+            specification: r.specification,
+            quantity: r.quantity,
+            supplier: r.supplier,
+            inspectionResult: r.inspectionResult,
+            photoBase64: r.photoBase64
+          }]
+        };
+      }
+      return r;
+    });
+
     // 필터링 적용
     if (site && site !== 'all') records = records.filter(r => r.site === site);
     if (part && part !== 'all') records = records.filter(r => r.part === part);

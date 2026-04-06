@@ -9,7 +9,6 @@ type InspectionItem = {
   specification: string;
   quantity: string;
   supplier: string;
-  inspectionResult: string;
   photo: { previewUrl: string; base64: string } | null;
 };
 
@@ -19,7 +18,6 @@ const createEmptyItem = (): InspectionItem => ({
   specification: '',
   quantity: '',
   supplier: '',
-  inspectionResult: 'pass',
   photo: null,
 });
 
@@ -34,19 +32,19 @@ function MaterialInspectionForm() {
   const [receiveDate, setReceiveDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [items, setItems] = useState<InspectionItem[]>([createEmptyItem()]);
-  const [historyItems, setHistoryItems] = useState<any[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState<any>(null);
+  const [historyBatches, setHistoryBatches] = useState<any[]>([]);
+  
+  // 수정 모드 관리
+  const [editBatchId, setEditBatchId] = useState<string | null>(null);
 
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const fetchHistory = async () => {
     try {
-      // 해당 현장의 전체 내역 조회
       const res = await fetch(`/api/material?site=${site}&part=all`);
       const data = await res.json();
       if (data.success) {
-        setHistoryItems(data.records || []);
+        setHistoryBatches(data.records || []);
       }
     } catch (err) {
       console.error(err);
@@ -124,7 +122,7 @@ function MaterialInspectionForm() {
 
   const removePhoto = (id: string) => {
     const item = items.find(i => i.id === id);
-    if (item?.photo) {
+    if (item?.photo && item.photo.previewUrl) {
       URL.revokeObjectURL(item.photo.previewUrl);
     }
     handleItemChange(id, 'photo', null);
@@ -143,33 +141,42 @@ function MaterialInspectionForm() {
     setLoading(true);
     
     try {
-      const itemsToSave = items.map(i => ({
-        materialName: i.materialName,
-        specification: i.specification,
-        quantity: i.quantity,
-        supplier: i.supplier,
-        inspectionResult: i.inspectionResult,
-        photoBase64: i.photo?.base64 || null
-      }));
+      const payload = {
+        id: editBatchId, // PUT일 경우 사용
+        site,
+        part,
+        receiveDate,
+        items: items.map(i => ({
+          id: i.id,
+          materialName: i.materialName,
+          specification: i.specification,
+          quantity: i.quantity,
+          supplier: i.supplier,
+          photoBase64: i.photo?.base64 || null
+        }))
+      };
 
-      const res = await fetch('/api/material', {
-        method: 'POST',
+      const url = '/api/material';
+      const method = editBatchId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          site,
-          part,
-          receiveDate,
-          items: itemsToSave
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) throw new Error('저장 실패');
 
-      alert('성공적으로 저장되었습니다!');
-      // 초기화
+      alert(editBatchId ? '성공적으로 수정되었습니다!' : '성공적으로 저장되었습니다!');
+      
+      // 폼 초기화
       setItems([createEmptyItem()]);
+      setEditBatchId(null);
       // 리스트 갱신
       fetchHistory();
+      
+      // 최상단 이동
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
       alert('저장 중 오류가 발생했습니다.');
@@ -178,38 +185,26 @@ function MaterialInspectionForm() {
     }
   };
 
-  const startEdit = (record: any) => {
-    setEditingId(record.id);
-    setEditFormData({ ...record });
+  const startEditBatch = (batch: any) => {
+    setSite(batch.site);
+    setPart(batch.part);
+    setReceiveDate(batch.receiveDate);
+    setEditBatchId(batch.id);
+    
+    const loadedItems = batch.items.map((item: any) => ({
+      id: item.id || Math.random().toString(36).substr(2, 9),
+      materialName: item.materialName || '',
+      specification: item.specification || '',
+      quantity: item.quantity || '',
+      supplier: item.supplier || '',
+      photo: item.photoBase64 ? { previewUrl: item.photoBase64, base64: item.photoBase64 } : null
+    }));
+    setItems(loadedItems);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditFormData(null);
-  };
-
-  const saveEdit = async () => {
-    try {
-      const res = await fetch('/api/material', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editFormData),
-      });
-      if (res.ok) {
-        alert('수정되었습니다.');
-        setEditingId(null);
-        fetchHistory();
-      } else {
-        alert('수정 실패');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('수정 중 오류 발생');
-    }
-  };
-
-  const deleteRecord = async (id: string) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+  const deleteBatch = async (id: string) => {
+    if (!confirm('정말 삭제하시겠습니까? (등록된 모든 자재가 삭제됩니다)')) return;
     try {
       const res = await fetch(`/api/material?id=${id}`, {
         method: 'DELETE'
@@ -236,15 +231,17 @@ function MaterialInspectionForm() {
           ←
         </button>
         <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#111',textAlign: 'center' }}>
-          현장 자재검수 시스템
+          {editBatchId ? '자재검수 내역 수정모드 ✏️' : '현장 자재검수 시스템'}
         </h2>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
         
         {/* 공통 입력: 현장, 파트, 일자 */}
-        <div style={{ padding: '16px', background: '#e2e8f0', borderRadius: '12px' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '12px', color: '#334155' }}>기본 정보</h3>
+        <div style={{ padding: '16px', background: editBatchId ? '#fef08a' : '#e2e8f0', borderRadius: '12px', transition: 'all 0.3s' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '12px', color: '#334155' }}>
+            {editBatchId ? '기본 정보 (수정 중)' : '기본 정보'}
+          </h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.85rem' }}>현장</label>
@@ -314,48 +311,14 @@ function MaterialInspectionForm() {
                 />
               </div>
 
-              <div style={{ marginBottom: '12px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <input
                   type="text"
-                  placeholder="납품처(제조사)"
+                  placeholder="납품처(제조사) - 선택"
                   value={item.supplier}
                   onChange={e => handleItemChange(item.id, 'supplier', e.target.value)}
                   className="input-field"
                 />
-              </div>
-
-              {/* 검수 결과 */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                  {['pass', 'fail', 'pending'].map(res => {
-                    const resMap: Record<string, {label: string, color: string}> = {
-                      pass: { label: '합격', color: '#10b981' },
-                      fail: { label: '불합격', color: '#ef4444' },
-                      pending: { label: '조건부', color: '#f59e0b' }
-                    };
-                    const isSelected = item.inspectionResult === res;
-                    return (
-                      <div 
-                        key={res}
-                        onClick={() => handleItemChange(item.id, 'inspectionResult', res)}
-                        style={{
-                          padding: '8px',
-                          textAlign: 'center',
-                          border: `2px solid ${isSelected ? resMap[res].color : '#e2e8f0'}`,
-                          borderRadius: '8px',
-                          fontWeight: isSelected ? 'bold' : 'normal',
-                          color: isSelected ? resMap[res].color : '#64748b',
-                          background: isSelected ? `${resMap[res].color}15` : '#fff',
-                          cursor: 'pointer',
-                          fontSize: '0.9rem',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {resMap[res].label}
-                      </div>
-                    )
-                  })}
-                </div>
               </div>
 
               {/* 사진 버튼 */}
@@ -403,18 +366,31 @@ function MaterialInspectionForm() {
           onClick={handleAddItem}
           style={{ width: '100%', padding: '16px', border: '2px dashed var(--primary-color)', background: '#f0f7ff', color: 'var(--primary-color)', fontSize: '1.05rem', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer' }}
         >
-          ➕ 자재 항목 추가하기
+          ➕ 추가 자재 등록하기
         </button>
 
         {/* 제출 구역 */}
-        <div style={{ background: '#fff', padding: '16px' }}>
+        <div style={{ background: '#fff', padding: '16px', display: 'flex', gap: '10px' }}>
+            {editBatchId && (
+              <button 
+                type="button"
+                onClick={() => {
+                  setItems([createEmptyItem()]);
+                  setEditBatchId(null);
+                }}
+                className="action-btn"
+                style={{ flex: 1, background: '#94a3b8', color: '#fff', padding: '16px', fontSize: '1.1rem' }}
+              >
+                수정 취소
+              </button>
+            )}
             <button 
               type="submit" 
               className="action-btn" 
               disabled={loading}
-              style={{ width: '100%', background: 'var(--primary-color)', color: '#fff', padding: '16px', fontSize: '1.1rem' }}
+              style={{ flex: editBatchId ? 2 : 1, background: editBatchId ? '#f59e0b' : 'var(--primary-color)', color: '#fff', padding: '16px', fontSize: '1.1rem' }}
             >
-              {loading ? '일괄 저장 중...' : `총 ${items.length}개 자재 검수 제출하기`}
+              {loading ? '처리 중...' : (editBatchId ? `총 ${items.length}개 자재 수정 완료` : `총 ${items.length}개 자재 검수 제출하기`)}
             </button>
         </div>
       </form>
@@ -425,93 +401,51 @@ function MaterialInspectionForm() {
           📝 최근 등록된 검수 내역
         </h3>
         
-        {historyItems.length === 0 ? (
+        {historyBatches.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#94a3b8', padding: '20px' }}>아직 등록된 자재가 없습니다.</p>
         ) : (
-          (() => {
-            const groupedByDate = historyItems.reduce((acc, item) => {
-              if (!acc[item.receiveDate]) acc[item.receiveDate] = [];
-              acc[item.receiveDate].push(item);
-              return acc;
-            }, {} as Record<string, any[]>);
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {historyBatches.map(batch => (
+              <div key={batch.id} style={{ border: '2px solid #cbd5e1', borderRadius: '12px', background: '#fff', overflow: 'hidden' }}>
+                {/* 배치 헤더 */}
+                <div style={{ background: '#f8fafc', padding: '16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', color: '#0f172a', fontWeight: 'bold' }}>
+                      📅 {batch.receiveDate} ({batch.part === 'facility' ? '시설' : '미화'})
+                    </h4>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>등록 항목: {batch.items ? batch.items.length : 0}건</p>
+                  </div>
+                  <button 
+                    onClick={() => window.open(`/api/admin/export-material-excel?site=${site}&part=${batch.part}&date=${batch.receiveDate}&id=${batch.id}`, '_blank')}
+                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  >
+                    문서 저장
+                  </button>
+                </div>
+                
+                {/* 뱃지 형식의 아이템 요약 */}
+                <div style={{ padding: '16px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                    {(batch.items || []).map((item: any, i: number) => (
+                      <span key={item.id || i} style={{ background: '#eff6ff', color: '#3b82f6', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', border: '1px solid #bfdbfe' }}>
+                        {item.materialName} ({item.quantity})
+                      </span>
+                    ))}
+                  </div>
 
-            const sortedDates = Object.keys(groupedByDate).sort((a,b) => b.localeCompare(a));
-
-            return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                {sortedDates.map(date => {
-                  const records = groupedByDate[date];
-                  const currentPart = records[0].part; // 보통 같은 날짜면 같은 파트로 업로드 됨
-                  return (
-                    <div key={date}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid #e2e8f0' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 'bold' }}>📅 {date} 입고 내역</h4>
-                        <button 
-                          onClick={() => window.open(`/api/admin/export-material-excel?site=${site}&part=${currentPart}&date=${date}`, '_blank')}
-                          style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          📊 엑셀 저장
-                        </button>
-                      </div>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {records.map((record: any) => (
-                          <div key={record.id} style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px', background: '#fff' }}>
-                            {editingId === record.id ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <input type="text" className="input-field" value={editFormData.materialName} onChange={(e) => setEditFormData({...editFormData, materialName: e.target.value})} placeholder="자재명" />
-                                <input type="text" className="input-field" value={editFormData.specification} onChange={(e) => setEditFormData({...editFormData, specification: e.target.value})} placeholder="규격" />
-                                <input type="number" className="input-field" value={editFormData.quantity} onChange={(e) => setEditFormData({...editFormData, quantity: e.target.value})} placeholder="수량" />
-                                <select className="input-field" value={editFormData.part} onChange={(e) => setEditFormData({...editFormData, part: e.target.value})}>
-                                  <option value="facility">시설</option>
-                                  <option value="cleaning">미화</option>
-                                </select>
-                                <select className="input-field" value={editFormData.inspectionResult} onChange={(e) => setEditFormData({...editFormData, inspectionResult: e.target.value})}>
-                                  <option value="pass">합격</option>
-                                  <option value="fail">불합격</option>
-                                  <option value="pending">조건부</option>
-                                </select>
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                  <button onClick={saveEdit} style={{ flex: 1, padding: '8px', background: '#10b981', color: 'white', borderRadius: '8px', border: 'none' }}>저장</button>
-                                  <button onClick={cancelEdit} style={{ flex: 1, padding: '8px', background: '#94a3b8', color: 'white', borderRadius: '8px', border: 'none' }}>취소</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                  <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>
-                                    {record.part === 'facility' ? '시설' : '미화'}
-                                  </span>
-                                  <span style={{ fontSize: '0.85rem', color: record.inspectionResult === 'pass' ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                                    {record.inspectionResult === 'pass' ? '합격' : (record.inspectionResult === 'fail' ? '불합격' : '조건부')}
-                                  </span>
-                                </div>
-                                <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: '#0f172a' }}>{record.materialName}</h4>
-                                <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#475569' }}>
-                                  규격: {record.specification || '-'} | 수량: {record.quantity || '-'}
-                                </p>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                  <button onClick={() => window.open(`/api/admin/export-material-excel?site=${site}&part=${record.part}&date=${record.receiveDate}&id=${record.id}`, '_blank')} style={{ flex: 1, padding: '8px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>문서 저장</button>
-                                  <button onClick={() => startEdit(record)} style={{ flex: 1, padding: '8px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontWeight: 'bold' }}>수정</button>
-                                  <button onClick={() => deleteRecord(record.id)} style={{ flex: 1, padding: '8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 'bold' }}>삭제</button>
-                                  {record.photoBase64 && (
-                                    <button onClick={() => {
-                                      const win = window.open('', '_blank');
-                                      if(win) win.document.write(`<img src="${record.photoBase64}" style="max-width: 100%" />`);
-                                    }} style={{ flex: 1, padding: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '8px' }}>사진 보기</button>
-                                  )}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+                  {/* 일괄 수정/삭제 액션 버튼 */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => startEditBatch(batch)} style={{ flex: 1, padding: '10px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontWeight: 'bold' }}>
+                      전체 수정하기 (항목 추가/삭제)
+                    </button>
+                    <button onClick={() => deleteBatch(batch.id)} style={{ flex: 1, padding: '10px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 'bold' }}>
+                      전체 삭제
+                    </button>
+                  </div>
+                </div>
               </div>
-            );
-          })()
+            ))}
+          </div>
         )}
       </div>
 

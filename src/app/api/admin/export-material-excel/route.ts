@@ -21,6 +21,27 @@ export async function GET(req: Request) {
     const rawRecords = await redis.lrange('material_records', 0, -1);
     let records = rawRecords.map(r => JSON.parse(r));
     
+    // 과거(단일 아이템) 호환성 보정을 위해 items가 없는 경우 강제로 items 배열 스키마로 래핑
+    records = records.map(r => {
+      if (!r.items) {
+        return {
+          id: r.id,
+          site: r.site,
+          part: r.part,
+          receiveDate: r.receiveDate,
+          items: [{
+            id: r.id + '_sub',
+            materialName: r.materialName,
+            specification: r.specification,
+            quantity: r.quantity,
+            supplier: r.supplier,
+            photoBase64: r.photoBase64
+          }]
+        };
+      }
+      return r;
+    });
+
     // 필터링 적용
     if (exactId) {
        records = records.filter(r => r.id === exactId);
@@ -41,6 +62,19 @@ export async function GET(req: Request) {
       return new NextResponse('해당 조건의 자재검수 기록이 없습니다.', { status: 404 });
     }
 
+    // Export 대상을 배열로 추출 (하나의 파일 내에 모든 서브 items 전개)
+    // 단건 모드일 경우 exactId에 해당하는 배치의 items 전체 나열
+    let exportItems: any[] = [];
+    records.forEach(batch => {
+      batch.items.forEach((item: any) => {
+         exportItems.push({
+           receiveDate: batch.receiveDate,
+           part: batch.part,
+           ...item
+         });
+      });
+    });
+
     // 2. 엑셀 템플릿 로드
     const templatePath = path.join(process.cwd(), 'public/templates/CHM-JT-자재-002-자재검수.xlsx');
     const workbook = new ExcelJS.Workbook();
@@ -51,8 +85,8 @@ export async function GET(req: Request) {
     // 3. 6개 단위로 쪼개기
     const chunkSize = 6;
     const chunks = [];
-    for (let i = 0; i < records.length; i += chunkSize) {
-      chunks.push(records.slice(i, i + chunkSize));
+    for (let i = 0; i < exportItems.length; i += chunkSize) {
+      chunks.push(exportItems.slice(i, i + chunkSize));
     }
 
     // 4. 각 청크마다 새로운 시트로 만들기
@@ -61,7 +95,7 @@ export async function GET(req: Request) {
       const ws = chunkIndex === 0 ? templateSheet : workbook.addWorksheet(sheetName);
       if (chunkIndex > 0) ws.name = sheetName; 
 
-      // 페이지 전체에 한 번 공통변수 적용
+      // 전체 페이지에 공통 값 세팅
       ws.eachRow({ includeEmpty: true }, (row) => {
         row.eachCell({ includeEmpty: true }, (cell) => {
           let val = '';
@@ -79,7 +113,7 @@ export async function GET(req: Request) {
           if (val.includes(`{{입고일자}}`) || val.includes(`{{작업내용}}`) || val.includes(`{{직군}}`) || val.includes(`{{페이지}}`)) {
             let replaced = val;
             replaced = replaced.replace(/{{입고일자}}/g, records[0].receiveDate);
-            replaced = replaced.replace(/{{작업내용}}/g, '자재 반입 검수');
+            replaced = replaced.replace(/{{작업내용}}/g, ''); // 사용자가 직접 쓰도록 공란 처리
             replaced = replaced.replace(/{{직군}}/g, (records[0].part === 'facility' ? '시설' : '미화'));
             replaced = replaced.replace(/{{페이지}}/g, `${chunkIndex + 1}/${chunks.length}`);
             cell.value = replaced;
