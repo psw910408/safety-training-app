@@ -94,7 +94,36 @@ export async function GET(req: Request) {
     chunks.forEach((chunk, chunkIndex) => {
       const sheetName = `${chunkIndex + 1}페이지`;
       const ws = chunkIndex === 0 ? templateSheet : workbook.addWorksheet(sheetName);
-      if (chunkIndex > 0) ws.name = sheetName; 
+      
+      if (chunkIndex > 0) {
+        ws.name = sheetName; 
+        
+        // 원본 시트 서식 복사 로직
+        templateSheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+          const newRow = ws.getRow(rowNumber);
+          newRow.height = row.height;
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            const newCell = newRow.getCell(colNumber);
+            newCell.value = cell.value;
+            newCell.style = cell.style; // 폰트, 테두리, 배경색 등 복사
+          });
+        });
+        
+        // 병합 셀 복사
+        if (templateSheet.model && templateSheet.model.merges) {
+          templateSheet.model.merges.forEach((mergeStr: string) => {
+            try { ws.mergeCells(mergeStr); } catch(e) {}
+          });
+        }
+        
+        // 열 너비 복사
+        for (let colIdx = 1; colIdx <= 35; colIdx++) {
+           const origCol = templateSheet.getColumn(colIdx);
+           if (origCol && origCol.width) {
+             ws.getColumn(colIdx).width = origCol.width;
+           }
+        }
+      } 
 
       // 전체 페이지에 공통 값 세팅
       ws.eachRow({ includeEmpty: true }, (row) => {
