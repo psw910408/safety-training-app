@@ -148,7 +148,7 @@ export async function GET(req: Request) {
             replaced = replaced.replace(/{{입고일자}}/g, records[0].receiveDate);
             replaced = replaced.replace(/{{작업내용}}/g, records[0].workDescription || ''); 
             replaced = replaced.replace(/{{직군}}/g, (records[0].part === 'facility' ? '시설' : '미화'));
-            replaced = replaced.replace(/{{페이지}}/g, `${chunkIndex + 1}/${chunks.length}`);
+            replaced = replaced.replace(/{{페이지}}/g, `${chunkIndex + 1}페이지`);
             cell.value = replaced;
             val = replaced; 
           }
@@ -170,9 +170,11 @@ export async function GET(req: Request) {
 
           if (itemIndex >= 0 && itemIndex < chunk.length) {
              const rec = chunk[itemIndex];
+             const globalIndex = chunkIndex * 6 + itemIndex + 1; // 전체 누적 순번
+
              if (val.includes(`{{순번}}`)) {
                 let replaced = val;
-                replaced = replaced.replace(/{{순번}}/g, String(itemIndex + 1));
+                replaced = replaced.replace(/{{순번}}/g, `${globalIndex}.`);
                 replaced = replaced.replace(/{{입고 물품}}/g, rec.materialName);
                 replaced = replaced.replace(/{{개수}}/g, rec.quantity + '개');
                 cell.value = replaced;
