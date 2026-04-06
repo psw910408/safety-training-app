@@ -484,6 +484,48 @@ function MaterialInspectionForm() {
         )}
       </div>
 
+      {/* 엑셀 자동 변환 다운로드 카드 (추가됨) */}
+      <div style={{ marginTop: '32px', padding: '24px', background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', borderRadius: '12px', border: '1px solid #86efac' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', marginBottom: '12px', fontSize: '1.1rem', fontWeight: 'bold' }}>
+          📊 [결재용] 서류 양식 자동 내보내기
+        </h3>
+        <p style={{ fontSize: '0.85rem', color: '#15803d', marginBottom: '16px', lineHeight: '1.4' }}>
+          위에서 등록한 데이터들을 원본 엑셀 서식(CHM-JT-자재-002)에 자동으로 쏙쏙 박아넣어 하나의 엑셀 파일로 완성해 줍니다. 월말 보고 시 클릭 한 번으로 끝내세요!
+        </p>
+        
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: 1, minWidth: '120px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#166534' }}>조회 월</label>
+            <input 
+              type="month" 
+              className="input-field" 
+              defaultValue={new Date().toISOString().slice(0, 7)}
+              id="download-month"
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '120px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#166534' }}>파트 구분</label>
+            <select className="input-field" id="download-part" defaultValue={part}>
+              <option value="facility">시설</option>
+              <option value="cleaning">미화</option>
+            </select>
+          </div>
+          <button 
+            type="button" 
+            className="action-btn"
+            style={{ width: '100%', minWidth: '140px', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '14px', fontSize: '1.05rem', marginTop: '8px' }}
+            onClick={() => {
+              const downloadMonth = (document.getElementById('download-month') as HTMLInputElement).value;
+              const downloadPart = (document.getElementById('download-part') as HTMLSelectElement).value;
+              if (!downloadMonth) return alert('월을 선택해주세요.');
+              window.open(`/api/admin/export-material-excel?site=${site}&part=${downloadPart}&month=${downloadMonth}`, '_blank');
+            }}
+          >
+            엑셀(.xlsx) 통합 다운로드
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }
