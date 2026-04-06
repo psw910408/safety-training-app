@@ -1,13 +1,13 @@
 import { Suspense } from 'react';
 import TrainingForm from '@/components/TrainingForm';
 
-export default function RecruitPage() {
+export default function SpecialPage() {
   return (
     <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>}>
       <TrainingForm 
-        type="recruit" 
-        title="🔰 채용 시 교육" 
-        desc="신규 채용자 및 관리감독자 일괄 처리 양식"
+        type="special" 
+        title="⚠️ 특별 교육 (현장)" 
+        desc="현장 특별 작업(전기, 밀폐공간 등) 진행 시 특화 교육 양식"
       />
     </Suspense>
   );

@@ -42,7 +42,7 @@ export function addWorkingDays(startDateStr: string, workingDays: number) {
 }
 
 export function calculateTrainings(hireDateStr: string, isNightWorker: boolean, department: string) {
-  const isFacility = department === '시설/관리';
+  const isFacility = department === '시설' || department === '관리' || department === '시설/관리';
   const isCleaning = department === '미화';
   
   // 만약 입사일이 공휴일/주말이면 첫 번째 평일로 교육 개시일을 잡음

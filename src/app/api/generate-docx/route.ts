@@ -8,11 +8,31 @@ export async function POST(req: Request) {
   try {
     const {
       site, trainingDate, startTime, endTime,
+      trainingLocation, conductorPosition, conductorName,
+      trainingType, targetGroup, specialSubject,
       workers, photos, managerSigBase64, directorSigBase64
     } = await req.json();
 
-    // 템플릿 파일 경로 (Next.js serverless 환경에서 접근을 위해 public 디렉토리 사용)
-    const templatePath = path.join(process.cwd(), 'public', 'templates', 'recruit_training_template.docx');
+    // 동적 템플릿 파일 경로 선택 로직
+    let templateFilename = 'recruit_worker.docx'; // 기본값 (안전 장치)
+    
+    if (trainingType === 'recruit') {
+       if (targetGroup === 'worker') templateFilename = 'recruit_worker.docx';
+       else templateFilename = 'recruit_supervisor.docx';
+    } else if (trainingType === 'change') {
+       if (targetGroup === 'worker') templateFilename = 'change_worker.docx';
+       else templateFilename = 'change_supervisor.docx';
+    } else if (trainingType === 'special') {
+       templateFilename = 'special_all.docx';
+    } else if (trainingType === 'msds') {
+       if (site === '종로타워' && targetGroup === 'facility') templateFilename = 'jongno_msds_facil.docx';
+       else if (site === '종로타워' && targetGroup === 'cleaning') templateFilename = 'jongno_msds_clean.docx';
+       else if (site === '삼화타워' && targetGroup === 'facility') templateFilename = 'samhwa_msds_facil.docx';
+       else if (site === '삼화타워' && targetGroup === 'cleaning') templateFilename = 'samhwa_msds_clean.docx';
+    }
+
+    // 템플릿 파일 경로
+    const templatePath = path.join(process.cwd(), 'public', 'templates', templateFilename);
     
     if (!fs.existsSync(templatePath)) {
       console.error('Template not found at:', templatePath);
@@ -113,6 +133,10 @@ export async function POST(req: Request) {
       현장명: site || '',
       교육일자: trainingDate || '',
       교육시간: `${startTime}~${endTime}`,
+      교육장소: trainingLocation || '',
+      실시자직책: conductorPosition || '',
+      실시자성명: conductorName || '',
+      특별교육과목: specialSubject || '',
       
       대상계: totalCount,
       대상남: attendedMale + absentMale,

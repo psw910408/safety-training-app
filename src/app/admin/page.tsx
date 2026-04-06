@@ -1,17 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AdminPage() {
+  const router = useRouter();
   const [workers, setWorkers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [site, setSite] = useState<'jongno' | 'samhwa'>('jongno');
   
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [department, setDepartment] = useState('시설/관리');
+  const [department, setDepartment] = useState('시설');
   const [hireDate, setHireDate] = useState('');
   const [isNightWorker, setIsNightWorker] = useState(false);
+  const [activeTab, setActiveTab] = useState<'basic' | 'training' | 'health'>('basic');
 
   const fetchWorkers = async () => {
     setLoading(true);
@@ -43,7 +46,7 @@ export default function AdminPage() {
     
     if (data.success) {
       alert('등록되었습니다.');
-      setName(''); setPhone(''); setHireDate(''); setDepartment('시설/관리'); setIsNightWorker(false);
+      setName(''); setPhone(''); setHireDate(''); setDepartment('시설'); setIsNightWorker(false);
       fetchWorkers();
     } else {
       alert(data.error || '등록 실패');
@@ -63,8 +66,6 @@ export default function AdminPage() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: '20px', color: 'var(--primary-color)', textAlign: 'center' }}>CHM 안전기술 - 현장 통합 관리자</h2>
-      
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
           <label style={{ 
             flex: 1, padding: '12px', border: `2px solid ${site === 'jongno' ? '#0070f3' : '#ddd'}`, 
@@ -96,9 +97,10 @@ export default function AdminPage() {
           <div className="input-group">
             <label className="input-label">직군 (부서)</label>
             <select className="input-field" value={department} onChange={e => setDepartment(e.target.value)}>
-              <option value="시설/관리">시설/관리 (특별+MSDS 전체대상)</option>
-              <option value="미화">미화 (MSDS만 수강)</option>
-              <option value="보안">보안 (채용시교육만 수강)</option>
+              <option value="시설">시설</option>
+              <option value="관리">관리</option>
+              <option value="미화">미화</option>
+              <option value="보안">보안</option>
             </select>
           </div>
           <div className="input-group">
@@ -116,54 +118,110 @@ export default function AdminPage() {
           <p style={{fontSize: '0.9rem', color: 'var(--text-light)', marginBottom: '15px', lineHeight: '1.4'}}>
             * 직군과 야간근무 여부를 정확히 선택하시면, 직군 면제 규칙을 반영하여 불필요한 스케줄은 &quot;대상자 아님&quot;으로 자동 제외 처리됩니다.
           </p>
-          <button type="submit" className="btn">스마트 계산업데이트 등록</button>
+          <button type="submit" className="btn">DB 저장하기</button>
         </form>
       </div>
 
       <div className="card">
-        <h3>등록된 교육 명단 현황 ({workers.length}명)</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h3 style={{ margin: 0 }}>등록된 인원 현황 ({workers.length}명)</h3>
+        </div>
+
+        <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', marginBottom: '15px' }}>
+          <button 
+            type="button"
+            style={{ flex: 1, padding: '10px', background: 'transparent', border: 'none', borderBottom: activeTab === 'basic' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'basic' ? 'var(--primary-color)' : '#64748b', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => setActiveTab('basic')}
+          >
+            기본 인적사항
+          </button>
+          <button 
+            type="button"
+            style={{ flex: 1, padding: '10px', background: 'transparent', border: 'none', borderBottom: activeTab === 'training' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'training' ? 'var(--primary-color)' : '#64748b', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => setActiveTab('training')}
+          >
+            안전교육 세부 내역
+          </button>
+          <button 
+            type="button"
+            style={{ flex: 1, padding: '10px', background: 'transparent', border: 'none', borderBottom: activeTab === 'health' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'health' ? 'var(--primary-color)' : '#64748b', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+            onClick={() => setActiveTab('health')}
+          >
+            건강검진 기록
+          </button>
+        </div>
+
         {loading ? <p style={{marginTop: '10px'}}>데이터를 불러오는 중...</p> : (
-          <div style={{ overflowX: 'auto', marginTop: '15px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1600px' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: activeTab === 'training' ? '1000px' : '500px' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: '#f4f7f6' }}>
+                <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: '#f8fafc' }}>
                   <th style={{ padding: '8px', fontSize: '0.85rem' }}>이름</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>연락처</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>직군</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>야간여부</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>입사일</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>채용시</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>압력용기</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>보일러</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>화기</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>전기</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>밀폐공간</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>MSDS</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>특건(배치전)</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>특건(배치후)</th>
-                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>관리</th>
+                  {activeTab === 'basic' && (
+                    <>
+                      <th style={{ padding: '8px', fontSize: '0.85rem' }}>연락처</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem' }}>직군</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem' }}>야간여부</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem' }}>입사일</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem' }}>관리</th>
+                    </>
+                  )}
+                  {activeTab === 'training' && (
+                    <>
+                      <th style={{ padding: '8px', fontSize: '0.85rem' }}>채용시</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem' }}>차기 MSDS</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#b91c1c' }}>특별(보일러)</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#b91c1c' }}>특별(압력용기)</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#b91c1c' }}>특별(화기)</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#b91c1c' }}>특별(전기)</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#b91c1c' }}>특별(밀폐)</th>
+                    </>
+                  )}
+                  {activeTab === 'health' && (
+                    <>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#15803d' }}>배치전 특건</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#15803d' }}>배치후 특건</th>
+                      <th style={{ padding: '8px', fontSize: '0.85rem', color: '#15803d' }}>차기 정기 특건</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {workers.map(w => (
-                  <tr key={w.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <tr key={w.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.name}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{w.phone}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.department}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem', color: w.isNightWorker ? 'var(--danger-color)' : '#999', fontWeight: 'bold' }}>{w.isNightWorker ? 'O' : 'X'}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.hireDate}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingHire}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingPressure}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingBoiler}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingFire}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingElectric}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingConfined}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingMSDS}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.healthCheckPre}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.healthCheckPost}</td>
-                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>
-                      <button onClick={() => handleDelete(w.id)} style={{ padding: '4px 8px', background: 'var(--danger-color)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
-                    </td>
+                    
+                    {activeTab === 'basic' && (
+                      <>
+                        <td style={{ padding: '8px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{w.phone}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.department}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem', color: w.isNightWorker ? 'var(--danger-color)' : '#999', fontWeight: 'bold' }}>{w.isNightWorker ? 'O' : 'X'}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.hireDate}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>
+                          <button onClick={() => handleDelete(w.id)} style={{ padding: '4px 8px', background: 'var(--danger-color)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
+                        </td>
+                      </>
+                    )}
+                    
+                    {activeTab === 'training' && (
+                      <>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingHire}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={w.nextTrainingMSDS}>{w.nextTrainingMSDS}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingBoiler}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingPressure}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingFire}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingElectric}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingConfined}</td>
+                      </>
+                    )}
+
+                    {activeTab === 'health' && (
+                      <>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.healthCheckPre}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.healthCheckPost}</td>
+                        <td style={{ padding: '8px', fontSize: '0.85rem', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={w.healthCheckRegular}>{w.healthCheckRegular}</td>
+                      </>
+                    )}
                   </tr>
                 ))}
                 {workers.length === 0 && (
@@ -175,6 +233,16 @@ export default function AdminPage() {
             </table>
           </div>
         )}
+      </div>
+
+      <div style={{ marginTop: '24px', textAlign: 'center' }}>
+        <button 
+          type="button" 
+          onClick={() => router.push('/calendar')} 
+          style={{ width: '100%', background: 'linear-gradient(135deg, #1e293b, #0f172a)', color: '#fff', border: 'none', padding: '16px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+        >
+          🗓️ 2026 전체 일정 캘린더 대시보드 보러 가기
+        </button>
       </div>
     </div>
   );

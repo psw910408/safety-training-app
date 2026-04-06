@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       formattedPhone = `${formattedPhone.slice(0, 3)}-${formattedPhone.slice(3, 7)}-${formattedPhone.slice(7)}`;
     }
 
-    const t = calculateTrainings(hireDate, isNightWorker, department || '시설/관리');
+    const t = calculateTrainings(hireDate, isNightWorker, department || '시설');
 
     const result = await db.run(
       `INSERT INTO workers (
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         trainingElectric, trainingConfined, trainingMSDS, nextTrainingMSDS,
         healthCheckPre, healthCheckPost, healthCheckRegular
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      name, formattedPhone, department || '시설/관리', hireDate, isNightWorker ? 1 : 0, t.trainingHire,
+      name, formattedPhone, department || '시설', hireDate, isNightWorker ? 1 : 0, t.trainingHire,
       t.trainingPressure, t.trainingBoiler, t.trainingFire,
       t.trainingElectric, t.trainingConfined, t.trainingMSDS, t.nextTrainingMSDS,
       t.healthCheckPre, t.healthCheckPost, t.healthCheckRegular

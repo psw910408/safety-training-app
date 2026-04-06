@@ -14,10 +14,19 @@ function ResultContent() {
 
   useEffect(() => {
     if (phone && site) {
-      fetch(`/api/check?phone=${phone}&site=${site}`)
+      fetch(`/api/check?phone=${phone}&site=${site}`, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        }
+      })
         .then((res) => res.json())
         .then((resData) => {
           if (resData.success) {
+            if (resData.data.department === '관리') {
+              // 권한 부여 없이 순수 캘린더 뷰어로 이동
+              window.location.href = `/calendar?site=${site}`;
+              return;
+            }
             setData(resData.data);
           } else {
             setError(resData.message || '오류가 발생했습니다.');
