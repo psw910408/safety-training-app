@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function AdminPage() {
   const router = useRouter();
   const [workers, setWorkers] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [site, setSite] = useState<'jongno' | 'samhwa'>('jongno');
   
@@ -26,8 +27,21 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  const fetchMaterials = async () => {
+    try {
+      const res = await fetch(`/api/material?site=${site}&part=all`);
+      const data = await res.json();
+      if (data.success) {
+        setMaterials(data.records || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchWorkers();
+    fetchMaterials();
   }, [site]);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -227,6 +241,54 @@ export default function AdminPage() {
                 {workers.length === 0 && (
                   <tr>
                     <td colSpan={15} style={{ padding: '20px', textAlign: 'center' }}>데이터가 없습니다.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: '20px' }}>
+        <h3 style={{ marginBottom: '15px' }}>등록된 자재 검수 현황 ({materials.length}건)</h3>
+        {loading ? <p style={{marginTop: '10px'}}>데이터를 불러오는 중...</p> : (
+          <div style={{ overflowX: 'auto', maxHeight: '400px', overflowY: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#f8fafc' }}>
+                <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>입고일자</th>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>파트</th>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>자재명</th>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>규격</th>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>수량</th>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>납품처</th>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>결과</th>
+                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>사진</th>
+                </tr>
+              </thead>
+              <tbody>
+                {materials.map((m, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{m.receiveDate}</td>
+                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{m.part === 'facility' ? '시설' : '미화'}</td>
+                    <td style={{ padding: '8px', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>{m.materialName}</td>
+                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{m.specification}</td>
+                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{m.quantity}</td>
+                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{m.supplier}</td>
+                    <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold', color: m.inspectionResult === 'pass' ? '#10b981' : (m.inspectionResult === 'fail' ? '#ef4444' : '#f59e0b') }}>
+                      {m.inspectionResult === 'pass' ? '합격' : (m.inspectionResult === 'fail' ? '불합격' : '조건부')}
+                    </td>
+                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>
+                      {m.photoBase64 ? <span style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }} onClick={() => {
+                         const win = window.open('', '_blank');
+                         if(win) win.document.write(`<img src="${m.photoBase64}" style="max-width: 100%" />`);
+                      }}>보기</span> : '-'}
+                    </td>
+                  </tr>
+                ))}
+                {materials.length === 0 && (
+                  <tr>
+                    <td colSpan={8} style={{ padding: '20px', textAlign: 'center' }}>등록된 자재가 없습니다.</td>
                   </tr>
                 )}
               </tbody>
