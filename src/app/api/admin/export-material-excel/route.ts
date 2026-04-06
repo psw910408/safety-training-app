@@ -90,45 +90,48 @@ export async function GET(req: Request) {
       chunks.push(exportItems.slice(i, i + chunkSize));
     }
 
-    // 4. 각 청크마다 새로운 시트로 만들기
-    chunks.forEach((chunk, chunkIndex) => {
-      const sheetName = `${chunkIndex + 1}페이지`;
-      const ws = chunkIndex === 0 ? templateSheet : workbook.addWorksheet(sheetName);
+    // 4. 먼저 원본 템플릿이 오염되기 전에 필요한 만큼 페이지(시트)를 모두 복사 생성
+    const generatedSheets = [templateSheet];
+    templateSheet.name = '1페이지';
+
+    for (let i = 1; i < chunks.length; i++) {
+      const sheetName = `${i + 1}페이지`;
+      const ws = workbook.addWorksheet(sheetName);
       
-      if (chunkIndex > 0) {
-        ws.name = sheetName; 
-        
-        // 원본 시트 서식 복사 로직
-        templateSheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
-          const newRow = ws.getRow(rowNumber);
-          newRow.height = row.height;
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            const newCell = newRow.getCell(colNumber);
-            newCell.value = cell.value;
-            newCell.style = cell.style; // 폰트, 테두리, 배경색 등 복사
-          });
+      templateSheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+        const newRow = ws.getRow(rowNumber);
+        newRow.height = row.height;
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const newCell = newRow.getCell(colNumber);
+          newCell.value = cell.value;
+          newCell.style = cell.style; 
         });
-        
-        // 병합 셀 복사
-        if (templateSheet.model && templateSheet.model.merges) {
-          templateSheet.model.merges.forEach((mergeStr: string) => {
-            try { ws.mergeCells(mergeStr); } catch(e) {}
-          });
-        }
-        
-        // 열 너비 복사
-        for (let colIdx = 1; colIdx <= 35; colIdx++) {
-           const origCol = templateSheet.getColumn(colIdx);
-           if (origCol && origCol.width) {
-             ws.getColumn(colIdx).width = origCol.width;
-           }
-        }
-      } 
+      });
+      
+      if (templateSheet.model && templateSheet.model.merges) {
+        templateSheet.model.merges.forEach((mergeStr: string) => {
+          try { ws.mergeCells(mergeStr); } catch(e) {}
+        });
+      }
+      
+      for (let colIdx = 1; colIdx <= 35; colIdx++) {
+         const origCol = templateSheet.getColumn(colIdx);
+         if (origCol && origCol.width) {
+           ws.getColumn(colIdx).width = origCol.width;
+         }
+      }
+      
+      generatedSheets.push(ws);
+    }
+
+    // 5. 각 청크마다 배정된 시트에 데이터 덮어쓰기
+    chunks.forEach((chunk, chunkIndex) => {
+      const ws = generatedSheets[chunkIndex];
 
       // 전체 페이지에 공통 값 세팅
       ws.eachRow({ includeEmpty: true }, (row) => {
         row.eachCell({ includeEmpty: true }, (cell) => {
-          // 셀이 병합된 경우 마스터 셀(좌상단 셀)이 아니면 조작 방지 (도형/통합문서 에러 원인 제거)
+          // 셀이 병합된 경우 마스터 셀이 아니면 조작 방지
           if (cell.isMerged && cell.master !== cell) return;
 
           let val = '';
@@ -158,13 +161,14 @@ export async function GET(req: Request) {
           const colNum = Number(cell.col);
           const rowNum = Number(cell.row);
 
+          // 정확한 Row 매핑: Note 1,2는 Row 17 근처, Note 3,4는 Row 30 근처, Note 5,6은 Row 43 근처
           if (colNum >= 1 && colNum <= 14) {
-             if (rowNum < 35) itemIndex = 0; // 아이템 1
-             else if (rowNum < 45) itemIndex = 2; // 아이템 3
+             if (rowNum < 25) itemIndex = 0; // 아이템 1
+             else if (rowNum < 40) itemIndex = 2; // 아이템 3
              else itemIndex = 4; // 아이템 5
           } else if (colNum >= 16) {
-             if (rowNum < 35) itemIndex = 1; // 아이템 2
-             else if (rowNum < 45) itemIndex = 3; // 아이템 4
+             if (rowNum < 25) itemIndex = 1; // 아이템 2
+             else if (rowNum < 40) itemIndex = 3; // 아이템 4
              else itemIndex = 5; // 아이템 6
           }
 
