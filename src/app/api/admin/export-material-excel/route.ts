@@ -11,9 +11,10 @@ export async function GET(req: Request) {
     const site = searchParams.get('site');
     const part = searchParams.get('part');
     const dateParam = searchParams.get('date'); // YYYY-MM-DD or YYYY-MM
+    const exactId = searchParams.get('id'); // 단건 다운로드용 ID
     
-    if (!site || !part || !dateParam) {
-      return new NextResponse('site, part, date 파라미터가 필요합니다.', { status: 400 });
+    if (!site) {
+      return new NextResponse('site 파라미터가 필요합니다.', { status: 400 });
     }
 
     // 1. DB에서 데이터 불러오기
@@ -21,11 +22,18 @@ export async function GET(req: Request) {
     let records = rawRecords.map(r => JSON.parse(r));
     
     // 필터링 적용
-    records = records.filter(r => 
-      r.site === site && 
-      r.part === part && 
-      r.receiveDate && r.receiveDate.startsWith(dateParam)
-    );
+    if (exactId) {
+       records = records.filter(r => r.id === exactId);
+    } else if (part && dateParam) {
+       records = records.filter(r => 
+         r.site === site && 
+         r.part === part && 
+         r.receiveDate && r.receiveDate.startsWith(dateParam)
+       );
+    } else {
+       return new NextResponse('단건 id 이거나 part, date 파라미터가 필요합니다.', { status: 400 });
+    }
+    
     // 시간 순으로 오래된 것부터
     records.reverse();
 
@@ -51,7 +59,7 @@ export async function GET(req: Request) {
     chunks.forEach((chunk, chunkIndex) => {
       const sheetName = `${chunkIndex + 1}페이지`;
       const ws = chunkIndex === 0 ? templateSheet : workbook.addWorksheet(sheetName);
-      if (chunkIndex > 0) ws.name = sheetName; // TODO: 향후 완벽 복제 로직 필요할 수 있음
+      if (chunkIndex > 0) ws.name = sheetName; 
 
       // 페이지 전체에 한 번 공통변수 적용
       ws.eachRow({ includeEmpty: true }, (row) => {
@@ -72,37 +80,80 @@ export async function GET(req: Request) {
             let replaced = val;
             replaced = replaced.replace(/{{입고일자}}/g, records[0].receiveDate);
             replaced = replaced.replace(/{{작업내용}}/g, '자재 반입 검수');
-            replaced = replaced.replace(/{{직군}}/g, part === 'facility' ? '시설' : '미화');
+            replaced = replaced.replace(/{{직군}}/g, (records[0].part === 'facility' ? '시설' : '미화'));
             replaced = replaced.replace(/{{페이지}}/g, `${chunkIndex + 1}/${chunks.length}`);
             cell.value = replaced;
-            val = replaced; // 업데이트된 값으로 변경
+            val = replaced; 
           }
 
-          // 각 항목 변수 치환 (순번, 물품, 개수, 사진)
+          // Note 등 데이터 치환: 순번, 입고물품, 개수
+          // 원본 템플릿의 {{순번}}, {{입고 물품}} 등이 여러 항목(1~6)에 매핑되므로, 각 사진 인덱스와 동일하게 매칭
+          // 하지만 엑셀에서 셀 값이 동일(예: "{{순번}} {{입고물품}}...")하게 설정되어 있다면,
+          // 열 위치(col)를 보고 어떤 항목인지 판단해야 합니다.
+          // 사진1(col:1~14), 사진2(col:16~29), 사진3, 사진4 등...
+          // 여기서는 단순히 chunk 내의 특정 항목을 매핑하는 단순화 로직을 쓰거나, 텍스트 교체 시 1번부터 차례대로 지우는 방법을 사용합니다.
+
+          let itemIndex = -1;
+          const colNum = Number(cell.col);
+          const rowNum = Number(cell.row);
+
+          if (colNum >= 1 && colNum <= 14) {
+             if (rowNum < 35) itemIndex = 0; // 아이템 1
+             else if (rowNum < 45) itemIndex = 2; // 아이템 3
+             else itemIndex = 4; // 아이템 5
+          } else if (colNum >= 16) {
+             if (rowNum < 35) itemIndex = 1; // 아이템 2
+             else if (rowNum < 45) itemIndex = 3; // 아이템 4
+             else itemIndex = 5; // 아이템 6
+          }
+
+          if (itemIndex >= 0 && itemIndex < chunk.length) {
+             const rec = chunk[itemIndex];
+             if (val.includes(`{{순번}}`)) {
+                let replaced = val;
+                replaced = replaced.replace(/{{순번}}/g, String(itemIndex + 1));
+                replaced = replaced.replace(/{{입고 물품}}/g, rec.materialName);
+                replaced = replaced.replace(/{{개수}}/g, rec.quantity + '개');
+                cell.value = replaced;
+             }
+          } else if (itemIndex >= 0 && itemIndex >= chunk.length) {
+             // 아이템이 없는 빈 자리라면 텍스트 삭제
+             if (val.includes(`{{순번}}`)) cell.value = '';
+          }
+
+          // 사진 데이터 삽입
           chunk.forEach((record, idx) => {
-            const itemNumber = idx + 1; // 1 ~ 6
-            if (val.includes(`{{순번}}`) || val.includes(`{{입고 물품}}`)) {
-               // Note: 현재 단일 셀에 여러 물품 데이터가 있을 경우 교체 방식 보정이 필요할 수 있음
-               // 원본 템플릿이 1,2,3 위치에 고정되어 있다면 정확한 좌표 매핑이 유리합니다.
-            }
-            if (val.includes(`{%사진${itemNumber}%}`)) {
-               cell.value = '';
+            const itemNum = idx + 1; 
+            if (val.includes(`{%사진${itemNum}%}`)) {
+               cell.value = ''; 
                if (record.photoBase64) {
-                 const base64Data = record.photoBase64.replace(/^data:image\/\w+;base64,/, "");
-                 const imageId = workbook.addImage({ base64: base64Data, extension: 'png' });
-                 ws.addImage(imageId, {
-                   tl: { col: Number(cell.col) - 1, row: Number(cell.row) - 1 },
-                   ext: { width: 140, height: 140 }
-                 });
+                 try {
+                   const base64Data = record.photoBase64.replace(/^data:image\/\w+;base64,/, "");
+                   const imageId = workbook.addImage({ base64: base64Data, extension: 'png' });
+                   ws.addImage(imageId, {
+                     tl: { col: Number(cell.col) - 1, row: Number(cell.row) - 1 },
+                     ext: { width: 140, height: 140 }
+                   });
+                 } catch(e) {
+                   console.log('Image add err', e);
+                 }
                }
             }
           });
+          
+          // 사용하지 않는 사진 태그 제거
+          for(let k = chunk.length + 1; k <= 6; k++) {
+             if (val.includes(`{%사진${k}%}`)) cell.value = '';
+          }
         });
       });
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
-    const fileName = encodeURIComponent(`${dateParam}_${site}_${part}_자재검수.xlsx`);
+    
+    // 파일명 인코딩
+    const baseName = exactId ? `${records[0].receiveDate}_${records[0].materialName}` : `${dateParam}_${part}`;
+    const fileName = encodeURIComponent(`${baseName}_자재검수.xlsx`);
 
     return new NextResponse(buffer, {
       headers: {

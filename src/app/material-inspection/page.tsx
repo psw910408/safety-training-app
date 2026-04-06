@@ -491,6 +491,7 @@ function MaterialInspectionForm() {
                                   규격: {record.specification || '-'} | 수량: {record.quantity || '-'}
                                 </p>
                                 <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button onClick={() => window.open(`/api/admin/export-material-excel?site=${site}&part=${record.part}&date=${record.receiveDate}&id=${record.id}`, '_blank')} style={{ flex: 1, padding: '8px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>문서 저장</button>
                                   <button onClick={() => startEdit(record)} style={{ flex: 1, padding: '8px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontWeight: 'bold' }}>수정</button>
                                   <button onClick={() => deleteRecord(record.id)} style={{ flex: 1, padding: '8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 'bold' }}>삭제</button>
                                   {record.photoBase64 && (
