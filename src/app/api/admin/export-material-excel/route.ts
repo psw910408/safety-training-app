@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { Redis } from 'ioredis';
 import ExcelJS from 'exceljs';
 import path from 'path';
+
+const redis = new Redis(process.env.REDIS_URL || '');
 
 export async function GET(req: Request) {
   try {
@@ -15,7 +17,8 @@ export async function GET(req: Request) {
     }
 
     // 1. DB에서 데이터 불러오기
-    let records: any[] = await kv.lrange('material_records', 0, -1);
+    const rawRecords = await redis.lrange('material_records', 0, -1);
+    let records = rawRecords.map(r => JSON.parse(r));
     
     // 필터링 적용
     records = records.filter(r => 
@@ -23,6 +26,8 @@ export async function GET(req: Request) {
       r.part === part && 
       r.receiveDate && r.receiveDate.startsWith(yearMonth)
     );
+    // 시간 순으로 오래된 것부터
+    records.reverse();
 
     if (records.length === 0) {
       return new NextResponse('해당 조건의 자재검수 기록이 없습니다.', { status: 404 });
@@ -83,7 +88,7 @@ export async function GET(req: Request) {
                  });
                  // 셀 크기에 맞춰 이미지 삽입
                  ws.addImage(imageId, {
-                   tl: { col: cell.col - 1, row: cell.row - 1 },
+                   tl: { col: Number(cell.col) - 1, row: Number(cell.row) - 1 },
                    ext: { width: 150, height: 150 } // 적절한 크기로 고정 또는 계산
                  });
                }
