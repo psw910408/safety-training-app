@@ -58,3 +58,58 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to fetch records' }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const data = await req.json();
+    const rawRecords = await redis.lrange('material_records', 0, -1);
+    
+    let targetIndex = -1;
+    for (let i = 0; i < rawRecords.length; i++) {
+       const record = JSON.parse(rawRecords[i]);
+       if (record.id === data.id) {
+          targetIndex = i;
+          // 업데이트할 데이터 병합
+          const updatedRecord = { ...record, ...data };
+          await redis.lset('material_records', i, JSON.stringify(updatedRecord));
+          break;
+       }
+    }
+    
+    if (targetIndex === -1) {
+       return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Material record update error:', error);
+    return NextResponse.json({ error: 'Failed to update record' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    
+    const rawRecords = await redis.lrange('material_records', 0, -1);
+    let targetRecord = null;
+    
+    for (const raw of rawRecords) {
+       const record = JSON.parse(raw);
+       if (record.id === id) {
+          targetRecord = raw;
+          break;
+       }
+    }
+    
+    if (targetRecord) {
+       await redis.lrem('material_records', 1, targetRecord);
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Material record delete error:', error);
+    return NextResponse.json({ error: 'Failed to delete record' }, { status: 500 });
+  }
+}
+

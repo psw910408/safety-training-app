@@ -64,8 +64,16 @@ export async function GET(req: Request) {
         
         // 엑셀 내 특정 키워드를 찾아서 데이터를 치환하는 로직 구현
         ws.eachRow((row) => {
-          row.eachCell((cell) => {
-            let val = cell.text;
+          row.eachCell({ includeEmpty: true }, (cell) => {
+            let val = '';
+            if (cell.value) {
+              if (typeof cell.value === 'string') val = cell.value;
+              else if (typeof cell.value === 'object' && (cell.value as any).richText) {
+                val = (cell.value as any).richText.map((rt: any) => rt.text).join('');
+              } else {
+                try { val = cell.value.toString(); } catch(e) {}
+              }
+            }
             if (!val) return;
             
             // 텍스트 교체 (예: {{순번}} {{입고 물품}} {{개수}})
