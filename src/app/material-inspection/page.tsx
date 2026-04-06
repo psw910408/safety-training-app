@@ -92,7 +92,7 @@ function MaterialInspectionForm() {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/webp', 0.6));
+            resolve(canvas.toDataURL('image/jpeg', 0.7)); // WebP 대신 JPEG 사용 (엑셀 호환성)
           } else {
             resolve(event.target?.result as string);
           }
@@ -131,6 +131,8 @@ function MaterialInspectionForm() {
     }
   };
 
+  const [workDescription, setWorkDescription] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.some(i => !i.materialName)) {
@@ -146,6 +148,7 @@ function MaterialInspectionForm() {
         site,
         part,
         receiveDate,
+        workDescription,
         items: items.map(i => ({
           id: i.id,
           materialName: i.materialName,
@@ -172,6 +175,7 @@ function MaterialInspectionForm() {
       // 폼 초기화
       setItems([createEmptyItem()]);
       setEditBatchId(null);
+      setWorkDescription('');
       // 리스트 갱신
       fetchHistory();
       
@@ -189,6 +193,7 @@ function MaterialInspectionForm() {
     setSite(batch.site);
     setPart(batch.part);
     setReceiveDate(batch.receiveDate);
+    setWorkDescription(batch.workDescription || '');
     setEditBatchId(batch.id);
     
     const loadedItems = batch.items.map((item: any) => ({
@@ -258,9 +263,15 @@ function MaterialInspectionForm() {
               </select>
             </div>
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.85rem' }}>입고 일자</label>
-            <input type="date" value={receiveDate} onChange={e => setReceiveDate(e.target.value)} className="input-field" style={{ padding: '10px' }} required />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.85rem' }}>입고 일자</label>
+              <input type="date" value={receiveDate} onChange={e => setReceiveDate(e.target.value)} className="input-field" style={{ padding: '10px' }} required />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.85rem' }}>작업 내용</label>
+              <input type="text" placeholder="예: 4월 정비 자재 반입" value={workDescription} onChange={e => setWorkDescription(e.target.value)} className="input-field" style={{ padding: '10px' }} required />
+            </div>
           </div>
         </div>
 

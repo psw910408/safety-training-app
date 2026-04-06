@@ -6,7 +6,7 @@ const redis = new Redis(process.env.REDIS_URL || '');
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const { site, part, receiveDate, items } = data;
+    const { site, part, receiveDate, items, workDescription } = data;
     
     // items 배열 전체를 하나의 배치(batch)로 묶어서 저장합니다.
     const batchRecord = {
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       site,
       part,
       receiveDate,
+      workDescription,
       items // [{ id, materialName, specification, quantity, supplier, photoBase64 }]
     };
     

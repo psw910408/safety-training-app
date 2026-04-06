@@ -70,6 +70,7 @@ export async function GET(req: Request) {
          exportItems.push({
            receiveDate: batch.receiveDate,
            part: batch.part,
+           workDescription: batch.workDescription,
            ...item
          });
       });
@@ -98,6 +99,9 @@ export async function GET(req: Request) {
       // 전체 페이지에 공통 값 세팅
       ws.eachRow({ includeEmpty: true }, (row) => {
         row.eachCell({ includeEmpty: true }, (cell) => {
+          // 셀이 병합된 경우 마스터 셀(좌상단 셀)이 아니면 조작 방지 (도형/통합문서 에러 원인 제거)
+          if (cell.isMerged && cell.master !== cell) return;
+
           let val = '';
           if (cell.value) {
             if (typeof cell.value === 'string') val = cell.value;
@@ -113,7 +117,7 @@ export async function GET(req: Request) {
           if (val.includes(`{{입고일자}}`) || val.includes(`{{작업내용}}`) || val.includes(`{{직군}}`) || val.includes(`{{페이지}}`)) {
             let replaced = val;
             replaced = replaced.replace(/{{입고일자}}/g, records[0].receiveDate);
-            replaced = replaced.replace(/{{작업내용}}/g, ''); // 사용자가 직접 쓰도록 공란 처리
+            replaced = replaced.replace(/{{작업내용}}/g, records[0].workDescription || ''); 
             replaced = replaced.replace(/{{직군}}/g, (records[0].part === 'facility' ? '시설' : '미화'));
             replaced = replaced.replace(/{{페이지}}/g, `${chunkIndex + 1}/${chunks.length}`);
             cell.value = replaced;
@@ -121,12 +125,6 @@ export async function GET(req: Request) {
           }
 
           // Note 등 데이터 치환: 순번, 입고물품, 개수
-          // 원본 템플릿의 {{순번}}, {{입고 물품}} 등이 여러 항목(1~6)에 매핑되므로, 각 사진 인덱스와 동일하게 매칭
-          // 하지만 엑셀에서 셀 값이 동일(예: "{{순번}} {{입고물품}}...")하게 설정되어 있다면,
-          // 열 위치(col)를 보고 어떤 항목인지 판단해야 합니다.
-          // 사진1(col:1~14), 사진2(col:16~29), 사진3, 사진4 등...
-          // 여기서는 단순히 chunk 내의 특정 항목을 매핑하는 단순화 로직을 쓰거나, 텍스트 교체 시 1번부터 차례대로 지우는 방법을 사용합니다.
-
           let itemIndex = -1;
           const colNum = Number(cell.col);
           const rowNum = Number(cell.row);
@@ -163,7 +161,8 @@ export async function GET(req: Request) {
                if (record.photoBase64) {
                  try {
                    const base64Data = record.photoBase64.replace(/^data:image\/\w+;base64,/, "");
-                   const imageId = workbook.addImage({ base64: base64Data, extension: 'png' });
+                   // JPEG 확정 (WebP로 등록된 경우 엑셀에서 버그 유발 방지)
+                   const imageId = workbook.addImage({ base64: base64Data, extension: 'jpeg' });
                    ws.addImage(imageId, {
                      tl: { col: Number(cell.col) - 1, row: Number(cell.row) - 1 },
                      ext: { width: 140, height: 140 }
