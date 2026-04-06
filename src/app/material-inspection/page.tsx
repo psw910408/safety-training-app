@@ -270,7 +270,7 @@ function MaterialInspectionForm() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.85rem' }}>작업 내용</label>
-              <input type="text" placeholder="예: 4월 정비 자재 반입" value={workDescription} onChange={e => setWorkDescription(e.target.value)} className="input-field" style={{ padding: '10px' }} required />
+              <input type="text" placeholder="예: 4월분 자재입고 사진" value={workDescription} onChange={e => setWorkDescription(e.target.value)} className="input-field" style={{ padding: '10px' }} required />
             </div>
           </div>
         </div>
@@ -297,7 +297,7 @@ function MaterialInspectionForm() {
               <div style={{ marginBottom: '12px' }}>
                 <input
                   type="text"
-                  placeholder="자재명 입력 (필수)"
+                  placeholder="예: 멀티조인트"
                   value={item.materialName}
                   onChange={e => handleItemChange(item.id, 'materialName', e.target.value)}
                   className="input-field"

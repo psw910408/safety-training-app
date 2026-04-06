@@ -194,7 +194,8 @@ export async function GET(req: Request) {
                    const imageId = workbook.addImage({ base64: base64Data, extension: 'jpeg' });
                    ws.addImage(imageId, {
                      tl: { col: Number(cell.col) - 1, row: Number(cell.row) - 1 },
-                     ext: { width: 140, height: 140 }
+                     ext: { width: 140, height: 140 },
+                     editAs: 'oneCell' // 엑셀 내부 XML Drawing 속성 충돌 방지 핵심 옵션
                    });
                  } catch(e) {
                    console.log('Image add err', e);
