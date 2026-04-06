@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function MaterialInspectionPage() {
+function MaterialInspectionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialSite = searchParams.get('site') as 'jongno' | 'samhwa' || 'jongno';
+  const initialSite = (searchParams.get('site') as 'jongno' | 'samhwa') || 'jongno';
   
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -316,5 +316,13 @@ export default function MaterialInspectionPage() {
 
       </form>
     </div>
+  );
+}
+
+export default function MaterialInspectionPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>}>
+      <MaterialInspectionForm />
+    </Suspense>
   );
 }
