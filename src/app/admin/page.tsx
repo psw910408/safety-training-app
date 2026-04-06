@@ -235,6 +235,47 @@ export default function AdminPage() {
         )}
       </div>
 
+      <div className="card" style={{ marginTop: '20px', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', border: '1px solid #e2e8f0' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#334155', marginBottom: '16px' }}>
+          📦 현장 자재 검수 엑셀 다운로드
+        </h3>
+        <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>
+          {site === 'jongno' ? '종로타워' : '삼화타워'} 현장의 월별 자재 검수 내역을 엑셀 서식에 맞춰 다운로드합니다.
+        </p>
+        
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: 1, minWidth: '120px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#475569' }}>조회 월</label>
+            <input 
+              type="month" 
+              className="input-field" 
+              defaultValue={new Date().toISOString().slice(0, 7)}
+              id="material-month"
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '120px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#475569' }}>파트</label>
+            <select className="input-field" id="material-part">
+              <option value="facility">시설</option>
+              <option value="cleaning">미화</option>
+            </select>
+          </div>
+          <button 
+            type="button" 
+            className="btn" 
+            style={{ minWidth: '140px', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            onClick={() => {
+              const month = (document.getElementById('material-month') as HTMLInputElement).value;
+              const part = (document.getElementById('material-part') as HTMLSelectElement).value;
+              if (!month) return alert('월을 선택해주세요.');
+              window.open(`/api/admin/export-material-excel?site=${site}&part=${part}&month=${month}`, '_blank');
+            }}
+          >
+            📊 엑셀 다운로드
+          </button>
+        </div>
+      </div>
+
       <div style={{ marginTop: '24px', textAlign: 'center' }}>
         <button 
           type="button" 
