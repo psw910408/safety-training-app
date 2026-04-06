@@ -428,102 +428,90 @@ function MaterialInspectionForm() {
         {historyItems.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#94a3b8', padding: '20px' }}>아직 등록된 자재가 없습니다.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {historyItems.map((record) => (
-              <div key={record.id} style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px', background: '#fff' }}>
-                {editingId === record.id ? (
-                  // 수정 모드
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <input type="text" className="input-field" value={editFormData.materialName} onChange={(e) => setEditFormData({...editFormData, materialName: e.target.value})} placeholder="자재명" />
-                    <input type="text" className="input-field" value={editFormData.specification} onChange={(e) => setEditFormData({...editFormData, specification: e.target.value})} placeholder="규격" />
-                    <input type="number" className="input-field" value={editFormData.quantity} onChange={(e) => setEditFormData({...editFormData, quantity: e.target.value})} placeholder="수량" />
-                    <select className="input-field" value={editFormData.part} onChange={(e) => setEditFormData({...editFormData, part: e.target.value})}>
-                      <option value="facility">시설</option>
-                      <option value="cleaning">미화</option>
-                    </select>
-                    <select className="input-field" value={editFormData.inspectionResult} onChange={(e) => setEditFormData({...editFormData, inspectionResult: e.target.value})}>
-                      <option value="pass">합격</option>
-                      <option value="fail">불합격</option>
-                      <option value="pending">조건부</option>
-                    </select>
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      <button onClick={saveEdit} style={{ flex: 1, padding: '8px', background: '#10b981', color: 'white', borderRadius: '8px', border: 'none' }}>저장</button>
-                      <button onClick={cancelEdit} style={{ flex: 1, padding: '8px', background: '#94a3b8', color: 'white', borderRadius: '8px', border: 'none' }}>취소</button>
-                    </div>
-                  </div>
-                ) : (
-                  // 일반 보기 모드
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>
-                        {record.receiveDate} | {record.part === 'facility' ? '시설' : '미화'}
-                      </span>
-                      <span style={{ fontSize: '0.85rem', color: record.inspectionResult === 'pass' ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                        {record.inspectionResult === 'pass' ? '합격' : (record.inspectionResult === 'fail' ? '불합격' : '조건부')}
-                      </span>
-                    </div>
-                    <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: '#0f172a' }}>{record.materialName}</h4>
-                    <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#475569' }}>
-                      규격: {record.specification || '-'} | 수량: {record.quantity || '-'}
-                    </p>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => startEdit(record)} style={{ flex: 1, padding: '8px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontWeight: 'bold' }}>수정</button>
-                      <button onClick={() => deleteRecord(record.id)} style={{ flex: 1, padding: '8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 'bold' }}>삭제</button>
-                      {record.photoBase64 && (
-                        <button onClick={() => {
-                          const win = window.open('', '_blank');
-                          if(win) win.document.write(`<img src="${record.photoBase64}" style="max-width: 100%" />`);
-                        }} style={{ flex: 1, padding: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '8px' }}>사진 보기</button>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+          (() => {
+            const groupedByDate = historyItems.reduce((acc, item) => {
+              if (!acc[item.receiveDate]) acc[item.receiveDate] = [];
+              acc[item.receiveDate].push(item);
+              return acc;
+            }, {} as Record<string, any[]>);
 
-      {/* 엑셀 자동 변환 다운로드 카드 (추가됨) */}
-      <div style={{ marginTop: '32px', padding: '24px', background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', borderRadius: '12px', border: '1px solid #86efac' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', marginBottom: '12px', fontSize: '1.1rem', fontWeight: 'bold' }}>
-          📊 [결재용] 서류 양식 자동 내보내기
-        </h3>
-        <p style={{ fontSize: '0.85rem', color: '#15803d', marginBottom: '16px', lineHeight: '1.4' }}>
-          위에서 등록한 데이터들을 원본 엑셀 서식(CHM-JT-자재-002)에 자동으로 쏙쏙 박아넣어 하나의 엑셀 파일로 완성해 줍니다. 월말 보고 시 클릭 한 번으로 끝내세요!
-        </p>
-        
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1, minWidth: '120px' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#166534' }}>조회 월</label>
-            <input 
-              type="month" 
-              className="input-field" 
-              defaultValue={new Date().toISOString().slice(0, 7)}
-              id="download-month"
-            />
-          </div>
-          <div style={{ flex: 1, minWidth: '120px' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#166534' }}>파트 구분</label>
-            <select className="input-field" id="download-part" defaultValue={part}>
-              <option value="facility">시설</option>
-              <option value="cleaning">미화</option>
-            </select>
-          </div>
-          <button 
-            type="button" 
-            className="action-btn"
-            style={{ width: '100%', minWidth: '140px', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '14px', fontSize: '1.05rem', marginTop: '8px' }}
-            onClick={() => {
-              const downloadMonth = (document.getElementById('download-month') as HTMLInputElement).value;
-              const downloadPart = (document.getElementById('download-part') as HTMLSelectElement).value;
-              if (!downloadMonth) return alert('월을 선택해주세요.');
-              window.open(`/api/admin/export-material-excel?site=${site}&part=${downloadPart}&month=${downloadMonth}`, '_blank');
-            }}
-          >
-            엑셀(.xlsx) 통합 다운로드
-          </button>
-        </div>
+            const sortedDates = Object.keys(groupedByDate).sort((a,b) => b.localeCompare(a));
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                {sortedDates.map(date => {
+                  const records = groupedByDate[date];
+                  const currentPart = records[0].part; // 보통 같은 날짜면 같은 파트로 업로드 됨
+                  return (
+                    <div key={date}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid #e2e8f0' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 'bold' }}>📅 {date} 입고 내역</h4>
+                        <button 
+                          onClick={() => window.open(`/api/admin/export-material-excel?site=${site}&part=${currentPart}&date=${date}`, '_blank')}
+                          style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          📊 엑셀 저장
+                        </button>
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {records.map((record: any) => (
+                          <div key={record.id} style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px', background: '#fff' }}>
+                            {editingId === record.id ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <input type="text" className="input-field" value={editFormData.materialName} onChange={(e) => setEditFormData({...editFormData, materialName: e.target.value})} placeholder="자재명" />
+                                <input type="text" className="input-field" value={editFormData.specification} onChange={(e) => setEditFormData({...editFormData, specification: e.target.value})} placeholder="규격" />
+                                <input type="number" className="input-field" value={editFormData.quantity} onChange={(e) => setEditFormData({...editFormData, quantity: e.target.value})} placeholder="수량" />
+                                <select className="input-field" value={editFormData.part} onChange={(e) => setEditFormData({...editFormData, part: e.target.value})}>
+                                  <option value="facility">시설</option>
+                                  <option value="cleaning">미화</option>
+                                </select>
+                                <select className="input-field" value={editFormData.inspectionResult} onChange={(e) => setEditFormData({...editFormData, inspectionResult: e.target.value})}>
+                                  <option value="pass">합격</option>
+                                  <option value="fail">불합격</option>
+                                  <option value="pending">조건부</option>
+                                </select>
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                  <button onClick={saveEdit} style={{ flex: 1, padding: '8px', background: '#10b981', color: 'white', borderRadius: '8px', border: 'none' }}>저장</button>
+                                  <button onClick={cancelEdit} style={{ flex: 1, padding: '8px', background: '#94a3b8', color: 'white', borderRadius: '8px', border: 'none' }}>취소</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                  <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>
+                                    {record.part === 'facility' ? '시설' : '미화'}
+                                  </span>
+                                  <span style={{ fontSize: '0.85rem', color: record.inspectionResult === 'pass' ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                                    {record.inspectionResult === 'pass' ? '합격' : (record.inspectionResult === 'fail' ? '불합격' : '조건부')}
+                                  </span>
+                                </div>
+                                <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: '#0f172a' }}>{record.materialName}</h4>
+                                <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#475569' }}>
+                                  규격: {record.specification || '-'} | 수량: {record.quantity || '-'}
+                                </p>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button onClick={() => startEdit(record)} style={{ flex: 1, padding: '8px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontWeight: 'bold' }}>수정</button>
+                                  <button onClick={() => deleteRecord(record.id)} style={{ flex: 1, padding: '8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 'bold' }}>삭제</button>
+                                  {record.photoBase64 && (
+                                    <button onClick={() => {
+                                      const win = window.open('', '_blank');
+                                      if(win) win.document.write(`<img src="${record.photoBase64}" style="max-width: 100%" />`);
+                                    }} style={{ flex: 1, padding: '8px', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '8px' }}>사진 보기</button>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
+        )}
       </div>
 
     </div>
