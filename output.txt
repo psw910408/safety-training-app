@@ -1,1 +1,1 @@
-{"error":"조회 실패"}
+{"error":"조회 실패: Reached the max retries per request limit (which is 20). Refer to \"maxRetriesPerRequest\" option for details."}
