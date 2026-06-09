@@ -3,7 +3,7 @@ import { Redis } from 'ioredis';
 import ExcelJS from 'exceljs';
 import path from 'path';
 
-const redis = new Redis(process.env.REDIS_URL || '');
+const redis = new Redis(process.env.KV_URL || process.env.REDIS_URL || '');
 
 export async function GET(req: Request) {
   try {

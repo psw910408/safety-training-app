@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Redis } from 'ioredis';
 
-const redis = new Redis(process.env.REDIS_URL || '');
+const redis = new Redis(process.env.KV_URL || process.env.REDIS_URL || '');
 
 export async function POST(req: Request) {
   try {

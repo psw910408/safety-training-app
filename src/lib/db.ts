@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
 
 // Create a singleton connection to Vercel KV (Redis)
-const redis = new Redis(process.env.REDIS_URL || '');
+const redis = new Redis(process.env.KV_URL || process.env.REDIS_URL || '');
 
 class RedisDatabase {
   private site: string;

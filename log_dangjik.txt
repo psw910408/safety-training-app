@@ -1,0 +1,191 @@
+﻿commit fa146b3756774d16740bce7ba67ef022097bc7e3
+Author: psw910408 <chm-admin@example.com>
+Date:   Tue Mar 24 12:22:53 2026 +0900
+
+    Initialize for Vercel deployment
+
+diff --git a/src/app/admin/page.tsx b/src/app/admin/page.tsx
+new file mode 100644
+index 0000000..abc921b
+--- /dev/null
++++ b/src/app/admin/page.tsx
+@@ -0,0 +1,181 @@
++'use client';
++
++import { useState, useEffect } from 'react';
++
++export default function AdminPage() {
++  const [workers, setWorkers] = useState<any[]>([]);
++  const [loading, setLoading] = useState(true);
++  const [site, setSite] = useState<'jongno' | 'samhwa'>('jongno');
++  
++  const [name, setName] = useState('');
++  const [phone, setPhone] = useState('');
++  const [department, setDepartment] = useState('?쒖꽕/愿由?);
++  const [hireDate, setHireDate] = useState('');
++  const [isNightWorker, setIsNightWorker] = useState(false);
++
++  const fetchWorkers = async () => {
++    setLoading(true);
++    const res = await fetch(`/api/admin/workers?site=${site}`);
++    const data = await res.json();
++    if (data.success) {
++      setWorkers(data.data);
++    }
++    setLoading(false);
++  };
++
++  useEffect(() => {
++    fetchWorkers();
++  }, [site]);
++
++  const handleAdd = async (e: React.FormEvent) => {
++    e.preventDefault();
++    if (!name || !phone || !hireDate || !department) {
++      alert('紐⑤뱺 ?꾨뱶瑜??낅젰?댁＜?몄슂.');
++      return;
++    }
++    
++    const res = await fetch('/api/admin/workers', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ name, phone, department, hireDate, isNightWorker, site })
++    });
++    const data = await res.json();
++    
++    if (data.success) {
++      alert('?깅줉?섏뿀?듬땲??');
++      setName(''); setPhone(''); setHireDate(''); setDepartment('?쒖꽕/愿由?); setIsNightWorker(false);
++      fetchWorkers();
++    } else {
++      alert(data.error || '?깅줉 ?ㅽ뙣');
++    }
++  };
++
++  const handleDelete = async (id: number) => {
++    if (!confirm('?뺣쭚 ??젣?섏떆寃좎뒿?덇퉴?')) return;
++    const res = await fetch(`/api/admin/workers?id=${id}&site=${site}`, { method: 'DELETE' });
++    const data = await res.json();
++    if (data.success) {
++      fetchWorkers();
++    } else {
++      alert(data.error || '??젣 ?ㅽ뙣');
++    }
++  };
++
++  return (
++    <div>
++      <h2 style={{ marginBottom: '20px', color: 'var(--primary-color)', textAlign: 'center' }}>CHM ?덉쟾湲곗닠 - ?꾩옣 ?듯빀 愿由ъ옄</h2>
++      
++      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
++          <label style={{ 
++            flex: 1, padding: '12px', border: `2px solid ${site === 'jongno' ? '#0070f3' : '#ddd'}`, 
++            borderRadius: '8px', textAlign: 'center', cursor: 'pointer',
++            background: site === 'jongno' ? '#f0f7ff' : '#fff',
++            fontWeight: site === 'jongno' ? 'bold' : 'normal'
++          }}>
++            <input type="radio" value="jongno" checked={site === 'jongno'} onChange={() => setSite('jongno')} style={{ display: 'none' }} />
++            醫낅줈???DB 愿由?+          </label>
++          <label style={{ 
++            flex: 1, padding: '12px', border: `2px solid ${site === 'samhwa' ? '#0070f3' : '#ddd'}`, 
++            borderRadius: '8px', textAlign: 'center', cursor: 'pointer',
++            background: site === 'samhwa' ? '#f0f7ff' : '#fff',
++            fontWeight: site === 'samhwa' ? 'bold' : 'normal'
++          }}>
++            <input type="radio" value="samhwa" checked={site === 'samhwa'} onChange={() => setSite('samhwa')} style={{ display: 'none' }} />
++            ?쇳솕???DB 愿由?+          </label>
++      </div>
++
++      <div className="card" style={{ marginTop: 0, marginBottom: '20px' }}>
++        <h3>[{site === 'jongno' ? '醫낅줈??? : '?쇳솕???}] ?좉퇋 ?몄썝 異붽?</h3>
++        <form onSubmit={handleAdd} style={{ marginTop: '15px' }}>
++          <div className="input-group">
++            <label className="input-label">?대쫫</label>
++            <input type="text" className="input-field" value={name} onChange={e => setName(e.target.value)} placeholder="?? 諛뺤쁺?? />
++          </div>
++          <div className="input-group">
++            <label className="input-label">吏곴뎔 (遺??</label>
++            <select className="input-field" value={department} onChange={e => setDepartment(e.target.value)}>
++              <option value="?쒖꽕/愿由?>?쒖꽕/愿由?(?밸퀎+MSDS ?꾩껜???</option>
++              <option value="誘명솕">誘명솕 (MSDS留??섍컯)</option>
++              <option value="蹂댁븞">蹂댁븞 (梨꾩슜?쒓탳?〓쭔 ?섍컯)</option>
++            </select>
++          </div>
++          <div className="input-group">
++            <label className="input-label">?대???踰덊샇</label>
++            <input type="text" className="input-field" value={phone} onChange={e => setPhone(e.target.value)} placeholder="010-3386-6350" />
++          </div>
++          <div className="input-group">
++            <label className="input-label">?낆궗?쇱옄</label>
++            <input type="date" className="input-field" value={hireDate} onChange={e => setHireDate(e.target.value)} />
++          </div>
++          <div className="input-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
++            <input type="checkbox" id="nightWorker" style={{ width: '20px', height: '20px' }} checked={isNightWorker} onChange={e => setIsNightWorker(e.target.checked)} />
++            <label htmlFor="nightWorker" className="input-label" style={{ marginBottom: 0, cursor: 'pointer', color: 'var(--danger-color)' }}>?쇨컙 ?뱀쭅 洹쇰Т???щ? (泥댄겕 ???뱀닔嫄닿컯寃吏??먮룞怨꾩궛)</label>
++          </div>
++          <p style={{fontSize: '0.9rem', color: 'var(--text-light)', marginBottom: '15px', lineHeight: '1.4'}}>
++            * 吏곴뎔怨??쇨컙洹쇰Т ?щ?瑜??뺥솗???좏깮?섏떆硫? 吏곴뎔 硫댁젣 洹쒖튃??諛섏쁺?섏뿬 遺덊븘?뷀븳 ?ㅼ?以꾩? &quot;??곸옄 ?꾨떂&quot;?쇰줈 ?먮룞 ?쒖쇅 泥섎━?⑸땲??
++          </p>
++          <button type="submit" className="btn">?ㅻ쭏??怨꾩궛?낅뜲?댄듃 ?깅줉</button>
++        </form>
++      </div>
++
++      <div className="card">
++        <h3>?깅줉??援먯쑁 紐낅떒 ?꾪솴 ({workers.length}紐?</h3>
++        {loading ? <p style={{marginTop: '10px'}}>?곗씠?곕? 遺덈윭?ㅻ뒗 以?..</p> : (
++          <div style={{ overflowX: 'auto', marginTop: '15px' }}>
++            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1600px' }}>
++              <thead>
++                <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: '#f4f7f6' }}>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?대쫫</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?곕씫泥?/th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>吏곴뎔</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?쇨컙?щ?</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?낆궗??/th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>梨꾩슜??/th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?뺣젰?⑷린</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>蹂댁씪??/th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?붽린</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?꾧린</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>諛?먭났媛?/th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>MSDS</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?밴굔(諛곗튂??</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>?밴굔(諛곗튂??</th>
++                  <th style={{ padding: '8px', fontSize: '0.85rem' }}>愿由?/th>
++                </tr>
++              </thead>
++              <tbody>
++                {workers.map(w => (
++                  <tr key={w.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
++                    <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.name}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{w.phone}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.department}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem', color: w.isNightWorker ? 'var(--danger-color)' : '#999', fontWeight: 'bold' }}>{w.isNightWorker ? 'O' : 'X'}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}>{w.hireDate}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingHire}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingPressure}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingBoiler}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingFire}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingElectric}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingConfined}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.trainingMSDS}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.healthCheckPre}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>{w.healthCheckPost}</td>
++                    <td style={{ padding: '8px', fontSize: '0.85rem' }}>
++                      <button onClick={() => handleDelete(w.id)} style={{ padding: '4px 8px', background: 'var(--danger-color)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>??젣</button>
++                    </td>
++                  </tr>
++                ))}
++                {workers.length === 0 && (
++                  <tr>
++                    <td colSpan={15} style={{ padding: '20px', textAlign: 'center' }}>?곗씠?곌? ?놁뒿?덈떎.</td>
++                  </tr>
++                )}
++              </tbody>
++            </table>
++          </div>
++        )}
++      </div>
++    </div>
++  );
++}
