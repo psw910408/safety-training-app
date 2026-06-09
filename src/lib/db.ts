@@ -1,7 +1,14 @@
 import { Redis } from 'ioredis';
 
-// Create a singleton connection to Vercel KV (Redis)
-const redis = new Redis(process.env.KV_URL || process.env.REDIS_URL || '');
+// Create a singleton connection to Vercel/Upstash KV (Redis)
+const redisUrl = process.env.KV_URL || process.env.REDIS_URL || '';
+const isUpstash = redisUrl.includes('upstash.io');
+const isRediss = redisUrl.startsWith('rediss://') || isUpstash;
+
+const redis = new Redis(isUpstash ? redisUrl.replace('redis://', 'rediss://') : redisUrl, {
+  family: 0, // Fix Node 18+ IPv6 DNS issues
+  ...(isRediss ? { tls: { rejectUnauthorized: false } } : {})
+});
 
 class RedisDatabase {
   private site: string;

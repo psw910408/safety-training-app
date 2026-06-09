@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { Redis } from 'ioredis';
 
-const redis = new Redis(process.env.KV_URL || process.env.REDIS_URL || '');
+const redisUrl = process.env.KV_URL || process.env.REDIS_URL || '';
+const isUpstash = redisUrl.includes('upstash.io');
+const isRediss = redisUrl.startsWith('rediss://') || isUpstash;
+
+const redis = new Redis(isUpstash ? redisUrl.replace('redis://', 'rediss://') : redisUrl, {
+  family: 0,
+  ...(isRediss ? { tls: { rejectUnauthorized: false } } : {})
+});
 
 export async function POST(req: Request) {
   try {
