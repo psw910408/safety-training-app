@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const workers = await db.all('SELECT * FROM workers ORDER BY id DESC');
     return NextResponse.json({ success: true, data: workers });
   } catch (error) {
-    return NextResponse.json({ error: '조회 실패' }, { status: 500 });
+    return NextResponse.json({ error: '조회 실패: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
