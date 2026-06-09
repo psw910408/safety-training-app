@@ -1,14 +1,11 @@
-import { Redis } from 'ioredis';
+import { Redis } from './kvdb';
 
-// Create a singleton connection to Vercel/Upstash KV (Redis)
+// Using free kvdb.io fallback instead of problematic ioredis
 const redisUrl = process.env.KV_URL || process.env.REDIS_URL || '';
 const isUpstash = redisUrl.includes('upstash.io');
 const isRediss = redisUrl.startsWith('rediss://') || isUpstash;
 
-const redis = new Redis(isUpstash ? redisUrl.replace('redis://', 'rediss://') : redisUrl, {
-  family: 0, // Fix Node 18+ IPv6 DNS issues
-  ...(isRediss ? { tls: { rejectUnauthorized: false } } : {})
-});
+const redis = new Redis();
 
 class RedisDatabase {
   private site: string;

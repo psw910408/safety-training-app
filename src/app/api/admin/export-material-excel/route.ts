@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server';
-import { Redis } from 'ioredis';
 import ExcelJS from 'exceljs';
 import path from 'path';
+import { Redis } from '@/lib/kvdb';
 
-const redisUrl = process.env.KV_URL || process.env.REDIS_URL || '';
-const isUpstash = redisUrl.includes('upstash.io');
-const isRediss = redisUrl.startsWith('rediss://') || isUpstash;
-
-const redis = new Redis(isUpstash ? redisUrl.replace('redis://', 'rediss://') : redisUrl, {
-  family: 0,
-  ...(isRediss ? { tls: { rejectUnauthorized: false } } : {})
-});
+const redis = new Redis();
 
 export async function GET(req: Request) {
   try {
