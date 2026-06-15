@@ -39,7 +39,7 @@ const csvData = `1,인재개발원,패기관,-,-,-,-,-,2023.07.19,150,동,-,5.18
 const masterData = {};
 let currentSite = "";
 
-csvData.split('\\n').forEach(line => {
+csvData.split('\n').forEach(line => {
   if(!line.trim()) return;
   const cols = line.split(',');
   if(cols[1] && cols[1].trim()) {
@@ -54,10 +54,19 @@ csvData.split('\\n').forEach(line => {
     const refrigerant = cols[6] && cols[6] !== '-' ? cols[6].trim() : 'R-134A';
     const rt = cols[7] && cols[7] !== '-' ? parseFloat(cols[7]) : 500;
     
-    const chilledSize = cols[9] && cols[9] !== '-' ? cols[9] : '200';
-    const chilledMaterial = cols[10] && cols[10] !== '-' ? cols[10] : '카본스틸';
-    const coolingSize = cols[14] && cols[14] !== '-' ? cols[14] : '250';
-    const coolingMaterial = cols[15] && cols[15] !== '-' ? cols[15] : '카본스틸';
+    // 냉수 배관
+    const chilledSize = cols[9] && cols[9] !== '-' ? cols[9] : '';
+    const chilledMaterial = cols[10] && cols[10] !== '-' ? cols[10] : '';
+    const chilledOD = cols[11] && cols[11] !== '-' ? cols[11] : '';
+    const chilledThick = cols[12] && cols[12] !== '-' ? cols[12] : '';
+    const chilledSep = cols[13] && cols[13] !== '-' ? cols[13] : '';
+
+    // 냉각수 배관
+    const coolingSize = cols[14] && cols[14] !== '-' ? cols[14] : '';
+    const coolingMaterial = cols[15] && cols[15] !== '-' ? cols[15] : '';
+    const coolingOD = cols[16] && cols[16] !== '-' ? cols[16] : '';
+    const coolingThick = cols[17] && cols[17] !== '-' ? cols[17] : '';
+    const coolingSep = cols[18] && cols[18] !== '-' ? cols[18] : '';
 
     masterData[currentSite].push({
       name: eqName,
@@ -66,11 +75,23 @@ csvData.split('\\n').forEach(line => {
       year: year,
       refrigerant: refrigerant,
       rt: rt,
-      chilledWaterPipe: { size: chilledSize, material: chilledMaterial },
-      coolingWaterPipe: { size: coolingSize, material: coolingMaterial }
+      chilledWaterPipe: { 
+        size: chilledSize, 
+        material: chilledMaterial,
+        outerDiameter: chilledOD,
+        thickness: chilledThick,
+        separation: chilledSep
+      },
+      coolingWaterPipe: { 
+        size: coolingSize, 
+        material: coolingMaterial,
+        outerDiameter: coolingOD,
+        thickness: coolingThick,
+        separation: coolingSep
+      }
     });
   }
 });
 
 fs.writeFileSync(path.join(__dirname, 'src/data/chillerMasterData.json'), JSON.stringify(masterData, null, 2));
-console.log('Successfully generated JSON with all nationwide branches.');
+console.log('Successfully generated JSON with detailed pipe dimensions.');

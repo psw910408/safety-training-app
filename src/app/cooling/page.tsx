@@ -13,25 +13,30 @@ type ChillerData = {
   year: string;
   refrigerant: string;
   rt: number;
-  chilledWaterPipe: any;
-  coolingWaterPipe: any;
+  chilledWaterPipe: { size: string, material: string, outerDiameter: string, thickness: string, separation: string };
+  coolingWaterPipe: { size: string, material: string, outerDiameter: string, thickness: string, separation: string };
 };
 
 const INITIAL_FORM = {
-  // 온도: 자동제어
+  // 냉수 배관 규격 (Step 2)
+  chilledPipeMat: '', chilledPipeSize: '', chilledPipeOD: '', chilledPipeThick: '', chilledPipeSep: '',
+  // 냉각수 배관 규격 (Step 2)
+  coolingPipeMat: '', coolingPipeSize: '', coolingPipeOD: '', coolingPipeThick: '', coolingPipeSep: '',
+
+  // 온도: 자동제어 (Step 3)
   autoChilledIn: '', autoChilledOut: '', autoCoolingIn: '', autoCoolingOut: '',
-  // 온도: 표면온도
+  // 온도: 표면온도 (Step 3)
   surfChilledIn: '', surfChilledOut: '', surfCoolingIn: '', surfCoolingOut: '',
   
-  // 냉수 유량
+  // 냉수 유량 (Step 3)
   chilledFlowDesign: '', chilledTempInDesign: '', chilledTempOutDesign: '',
   chilledFlowMeasure: '', chilledTempInMeasure: '', chilledTempOutMeasure: '',
   
-  // 냉각수 유량
+  // 냉각수 유량 (Step 3)
   coolingFlowDesign: '', coolingTempInDesign: '', coolingTempOutDesign: '',
   coolingFlowMeasure: '', coolingTempInMeasure: '', coolingTempOutMeasure: '',
 
-  // 기타 압력 등
+  // 기타 압력 등 (Step 4)
   evaporatorPressure: '',
   condenserPressure: '',
   chilledPumpHz: '60',
@@ -119,6 +124,23 @@ function CoolingInspectionContent() {
     const siteEqs = masterData[siteText] || [];
     const matchedEq = siteEqs.find(e => e.name === eqText);
     setEqSpecs(matchedEq || null);
+
+    if (matchedEq) {
+      setFormData(prev => ({
+        ...prev,
+        chilledPipeMat: matchedEq.chilledWaterPipe?.material || prev.chilledPipeMat,
+        chilledPipeSize: matchedEq.chilledWaterPipe?.size || prev.chilledPipeSize,
+        chilledPipeOD: matchedEq.chilledWaterPipe?.outerDiameter || prev.chilledPipeOD,
+        chilledPipeThick: matchedEq.chilledWaterPipe?.thickness || prev.chilledPipeThick,
+        chilledPipeSep: matchedEq.chilledWaterPipe?.separation || prev.chilledPipeSep,
+        
+        coolingPipeMat: matchedEq.coolingWaterPipe?.material || prev.coolingPipeMat,
+        coolingPipeSize: matchedEq.coolingWaterPipe?.size || prev.coolingPipeSize,
+        coolingPipeOD: matchedEq.coolingWaterPipe?.outerDiameter || prev.coolingPipeOD,
+        coolingPipeThick: matchedEq.coolingWaterPipe?.thickness || prev.coolingPipeThick,
+        coolingPipeSep: matchedEq.coolingWaterPipe?.separation || prev.coolingPipeSep,
+      }));
+    }
   }, [siteText, eqText]);
 
   const handleChange = (e: any) => {
@@ -174,16 +196,16 @@ function CoolingInspectionContent() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-        {[1, 2, 3].map(num => (
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px' }}>
+        {[1, 2, 3, 4].map(num => (
           <div key={num} onClick={() => setStep(num)} style={{ 
-            flex: 1, textAlign: 'center', padding: '10px', 
+            flex: 1, textAlign: 'center', padding: '10px 4px', 
             background: step === num ? 'var(--primary-color)' : '#e2e8f0',
             color: step === num ? '#fff' : '#64748b',
-            borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem',
+            borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem',
             cursor: 'pointer', transition: 'all 0.2s'
           }}>
-            Step {num}
+            S {num}
           </div>
         ))}
       </div>
@@ -239,7 +261,44 @@ function CoolingInspectionContent() {
 
         {step === 2 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>2. 냉동기 온도 및 냉각 유량</h3>
+            <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>2. 유량계 세팅용 배관 정보</h3>
+            
+            <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #0369a1', marginBottom: '16px' }}>
+              <h4 style={{ color: '#0369a1', marginBottom: '12px' }}>🔵 냉수 배관 규격</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="chilledPipeMat" className="input-field" value={formData.chilledPipeMat} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="chilledPipeSize" className="input-field" value={formData.chilledPipeSize} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="chilledPipeOD" className="input-field" value={formData.chilledPipeOD} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="chilledPipeThick" className="input-field" value={formData.chilledPipeThick} onChange={handleChange} /></div>
+                <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="chilledPipeSep" className="input-field" value={formData.chilledPipeSep} onChange={handleChange} /></div>
+              </div>
+            </div>
+
+            <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #15803d', marginBottom: '24px' }}>
+              <h4 style={{ color: '#15803d', marginBottom: '12px' }}>🟢 냉각수 배관 규격</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="coolingPipeMat" className="input-field" value={formData.coolingPipeMat} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="coolingPipeSize" className="input-field" value={formData.coolingPipeSize} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="coolingPipeOD" className="input-field" value={formData.coolingPipeOD} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="coolingPipeThick" className="input-field" value={formData.coolingPipeThick} onChange={handleChange} /></div>
+                <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="coolingPipeSep" className="input-field" value={formData.coolingPipeSep} onChange={handleChange} /></div>
+              </div>
+            </div>
+
+            <div style={{ padding: '16px', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fcd34d', fontSize: '0.9rem', color: '#b45309', marginBottom: '24px' }}>
+              ℹ️ 스텝 1에서 마스터 데이터와 연동된 기기라면 위 정보가 자동으로 채워집니다! 엑셀 데이터가 없는 새로운 기기이거나 현장 상황이 다르면 직접 수기로 입력/수정하세요.
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button type="button" className="btn" style={{ background: '#64748b' }} onClick={() => setStep(1)}>⬅ 이전</button>
+              <button type="button" className="btn" onClick={() => setStep(3)}>다음 단계로 ➔</button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div style={{ animation: 'fadeIn 0.3s ease' }}>
+            <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>3. 냉동기 온도 및 냉각 유량</h3>
             
             {/* 섹션 A: 냉동기 온도 */}
             <div style={{ marginBottom: '32px' }}>
@@ -340,15 +399,15 @@ function CoolingInspectionContent() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-              <button type="button" className="btn" style={{ background: '#64748b' }} onClick={() => setStep(1)}>⬅ 이전</button>
-              <button type="button" className="btn" onClick={() => setStep(3)}>다음 단계로 ➔</button>
+              <button type="button" className="btn" style={{ background: '#64748b' }} onClick={() => setStep(2)}>⬅ 이전</button>
+              <button type="button" className="btn" onClick={() => setStep(4)}>다음 단계로 ➔</button>
             </div>
           </div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>3. 펌프 및 기타 압력</h3>
+            <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>4. 펌프 및 기타 압력</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
               <div>
@@ -378,7 +437,7 @@ function CoolingInspectionContent() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button type="button" className="btn" style={{ background: '#64748b', flex: '1' }} onClick={() => setStep(2)}>⬅ 이전</button>
+              <button type="button" className="btn" style={{ background: '#64748b', flex: '1' }} onClick={() => setStep(3)}>⬅ 이전</button>
               <button type="submit" className="btn" style={{ flex: '2', background: '#10b981' }}>✅ 최종 완료 및 서버 전송</button>
             </div>
           </div>
