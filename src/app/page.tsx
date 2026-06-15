@@ -53,8 +53,6 @@ export default function Home() {
     } else if (type === 'material-inspection') {
       // 자재검수는 개발 예정, 또는 페이지로 이동
       router.push(`/material-inspection?site=${site}&phone=${phone}`);
-    } else if (type === 'duty') {
-      router.push(`/duty?site=${site}&phone=${phone}`);
     } else if (['recruit', 'change', 'msds', 'special'].includes(type)) {
       if (site === 'samhwa' && type === 'msds') {
         alert('삼화타워 MSDS 현황 및 양식 파악 중입니다. 완료 후 업데이트 예정입니다!');
@@ -126,11 +124,6 @@ export default function Home() {
           <button type="button" className="action-btn" onClick={() => handleAction('special')} disabled={loading}>
             <div className="icon">⚠️</div>
             현장 특별교육
-          </button>
-
-          <button type="button" className="action-btn" onClick={() => handleAction('duty')} disabled={loading}>
-            <div className="icon">🏢</div>
-            시설당직근무표
           </button>
 
           <button type="button" className="action-btn" onClick={() => handleAction('cooling')} disabled={loading}>
