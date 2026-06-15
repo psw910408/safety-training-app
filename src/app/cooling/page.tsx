@@ -26,6 +26,7 @@ const PIPE_DICT: Record<string, {od: string, thick: string, sep: string}> = {
   "동-150": { od: "159.0", thick: "5.18", sep: "104.64" },
   "동-125": { od: "133.0", thick: "3.18", sep: "79.9" },
   "스테인레스스틸-250": { od: "267.4", thick: "3.4", sep: "227.6" },
+  "스테인레스-250": { od: "267.4", thick: "3.4", sep: "227.6" },
   "카본스틸/압력배관-150": { od: "165.2", thick: "7.1", sep: "142.0" },
   "카본스틸/압력배관-200": { od: "216.3", thick: "8.2", sep: "196.804" },
   "카본스틸/압력배관-250": { od: "267.4", thick: "9.3", sep: "239.492" }
@@ -59,11 +60,8 @@ const INITIAL_FORM = {
 };
 
 function CoolingInspectionContent() {
-  const searchParams = useSearchParams();
-  const defaultSite = searchParams.get('site') === 'samhwa' ? '삼화타워' : '종로타워';
-  
   const [step, setStep] = useState(1);
-  const [siteText, setSiteText] = useState(defaultSite);
+  const [siteText, setSiteText] = useState('');
   const [eqText, setEqText] = useState('');
   
   const [eqSpecs, setEqSpecs] = useState<ChillerData | null>(null);
@@ -163,7 +161,8 @@ function CoolingInspectionContent() {
     if (name === 'chilledPipeMat' || name === 'chilledPipeSize') {
       const mat = name === 'chilledPipeMat' ? value : formData.chilledPipeMat;
       const size = name === 'chilledPipeSize' ? value : formData.chilledPipeSize;
-      const key = `${mat}-${size}`;
+      const cleanSize = size.toLowerCase().replace(/a$/, '').trim();
+      const key = `${mat.trim()}-${cleanSize}`;
       if (PIPE_DICT[key]) {
         newFormData.chilledPipeOD = PIPE_DICT[key].od;
         newFormData.chilledPipeThick = PIPE_DICT[key].thick;
@@ -173,7 +172,8 @@ function CoolingInspectionContent() {
     if (name === 'coolingPipeMat' || name === 'coolingPipeSize') {
       const mat = name === 'coolingPipeMat' ? value : formData.coolingPipeMat;
       const size = name === 'coolingPipeSize' ? value : formData.coolingPipeSize;
-      const key = `${mat}-${size}`;
+      const cleanSize = size.toLowerCase().replace(/a$/, '').trim();
+      const key = `${mat.trim()}-${cleanSize}`;
       if (PIPE_DICT[key]) {
         newFormData.coolingPipeOD = PIPE_DICT[key].od;
         newFormData.coolingPipeThick = PIPE_DICT[key].thick;
@@ -209,7 +209,7 @@ function CoolingInspectionContent() {
     
     // 폼 초기화 및 화면 이동
     setFormData(INITIAL_FORM);
-    setSiteText(defaultSite);
+    setSiteText('');
     setEqText('');
     setCurrentDraftId(null);
     setStep(1);
