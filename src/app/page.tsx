@@ -33,7 +33,7 @@ export default function Home() {
   const handleAction = (type: string) => {
     if (!validatePhone()) return;
     
-    if (type !== 'schedule' && type !== 'material-request' && type !== 'material-inspection') {
+    if (type !== 'schedule' && type !== 'material-request' && type !== 'material-inspection' && type !== 'cooling') {
       const pass = prompt('🚨 해당 교육 메뉴는 관리자 전용입니다. 승인 코드를 입력하세요.');
       if (pass !== '0000') {
         alert('관리자 전용 구역입니다. 문의사항은 박상우 개발자에게 문의하세요!');
@@ -44,6 +44,9 @@ export default function Home() {
     if (type === 'schedule') {
       setLoading(true);
       router.push(`/result?phone=${phone}&site=${site}`);
+    } else if (type === 'cooling') {
+      alert('냉방점검 페이지 내용은 추후 업데이트 예정입니다.');
+      return;
     } else if (type === 'material-request') {
       alert('추후 서비스 예정입니다.');
       return;
@@ -128,6 +131,11 @@ export default function Home() {
           <button type="button" className="action-btn" onClick={() => handleAction('duty')} disabled={loading}>
             <div className="icon">🏢</div>
             시설당직근무표
+          </button>
+
+          <button type="button" className="action-btn" onClick={() => handleAction('cooling')} disabled={loading}>
+            <div className="icon">❄️</div>
+            냉방점검
           </button>
         </div>
 
