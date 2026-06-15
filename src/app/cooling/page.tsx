@@ -105,10 +105,9 @@ export default function CoolingInspectionPage() {
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>사옥 선택</label>
               <select className="input-field" value={site} onChange={(e) => setSite(e.target.value)}>
-                <option value="종로타워">종로타워</option>
-                <option value="삼화타워">삼화타워</option>
-                <option value="T-타워">T-타워</option>
-                <option value="성수">성수</option>
+                {Object.keys(masterData).map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
             </div>
 

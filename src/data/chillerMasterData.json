@@ -1,80 +1,20 @@
 {
-  "T-타워": [
+  "인재개발원": [
     {
-      "name": "24시간 터보",
-      "type": "저압터보",
-      "manufacturer": "LG",
-      "year": "2004",
-      "refrigerant": "R-123",
-      "rt": 200,
-      "chilledWaterPipe": { "size": "150", "material": "카본스틸/압력배관", "outerDiameter": 165.2, "thickness": 7.1 },
-      "coolingWaterPipe": { "size": "150", "material": "카본스틸/압력배관", "outerDiameter": 165.2, "thickness": 7.1 }
-    },
-    {
-      "name": "빙축열터보 1호기",
-      "type": "저압터보",
-      "manufacturer": "트레인",
-      "year": "2004",
-      "refrigerant": "R-123",
-      "rt": 450,
-      "chilledWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 9.3 },
-      "coolingWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 9.3 }
-    },
-    {
-      "name": "빙축열터보 2호기",
-      "type": "저압터보",
-      "manufacturer": "트레인",
-      "year": "2004",
-      "refrigerant": "R-123",
-      "rt": 450,
-      "chilledWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 9.3 },
-      "coolingWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 9.3 }
-    }
-  ],
-  "성수": [
-    {
-      "name": "고압터보 1호기",
-      "type": "고압터보",
+      "name": "패기관",
+      "type": "터보냉동기",
       "manufacturer": "-",
-      "year": "2023",
-      "refrigerant": "-",
+      "year": "-",
+      "refrigerant": "R-134A",
       "rt": 500,
-      "chilledWaterPipe": { "size": "250", "material": "동관", "outerDiameter": 257.18, "thickness": 6.35 },
-      "coolingWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 6.4 }
-    },
-    {
-      "name": "고압터보 2호기",
-      "type": "고압터보",
-      "manufacturer": "-",
-      "year": "2023",
-      "refrigerant": "-",
-      "rt": 500,
-      "chilledWaterPipe": { "size": "200", "material": "동관", "outerDiameter": 206.38, "thickness": 5.08 },
-      "coolingWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 6.4 }
-    }
-  ],
-  "종로타워": [
-    {
-      "name": "흡수식 냉동기 1호기",
-      "type": "흡수식",
-      "manufacturer": "LG",
-      "year": "2010",
-      "refrigerant": "물",
-      "rt": 600,
-      "chilledWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 6.4 },
-      "coolingWaterPipe": { "size": "300", "material": "카본스틸", "outerDiameter": 318.5, "thickness": 7.0 }
-    }
-  ],
-  "삼화타워": [
-    {
-      "name": "터보냉동기 1호기",
-      "type": "저압터보",
-      "manufacturer": "센츄리",
-      "year": "2015",
-      "refrigerant": "R-123",
-      "rt": 300,
-      "chilledWaterPipe": { "size": "200", "material": "카본스틸", "outerDiameter": 216.3, "thickness": 5.85 },
-      "coolingWaterPipe": { "size": "250", "material": "카본스틸", "outerDiameter": 267.4, "thickness": 6.4 }
+      "chilledWaterPipe": {
+        "size": "150",
+        "material": "동"
+      },
+      "coolingWaterPipe": {
+        "size": "200",
+        "material": "카본스틸"
+      }
     }
   ]
 }
