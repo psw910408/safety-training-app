@@ -1,4 +1,6 @@
-'use client';
+const fs = require('fs');
+
+const page_code = `'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -201,7 +203,7 @@ function CoolingInspectionContent() {
 
   return (
     <div className="card" style={{ padding: '20px', position: 'relative' }}>
-      <style>{`input::-webkit-calendar-picker-indicator { display: none !important; } input[type="date"]::-webkit-calendar-picker-indicator { display: block !important; }`}</style>
+      <style>{\`input::-webkit-calendar-picker-indicator { display: none !important; } input[type="date"]::-webkit-calendar-picker-indicator { display: block !important; }\`}</style>
       <div className="header" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div><h2>❄️ 냉방장비 성능점검</h2><p>V5 엔지니어링 폼</p></div>
         <div style={{ textAlign: 'right' }}>
@@ -254,7 +256,7 @@ function CoolingInspectionContent() {
               <h4 style={{ color: '#0369a1', marginBottom: '12px' }}>🔵 냉수 배관 규격</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><select name="chilledPipeMat" className="input-field" value={formData.chilledPipeMat} onChange={handleChange}>{MATERIALS.map(m => <option key={m} value={m}>{m === "" ? "선택" : m}</option>)}</select></div>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><select name="chilledPipeSize" className="input-field" value={formData.chilledPipeSize} onChange={handleChange}>{SIZES.map(s => <option key={s} value={s}>{s === "" ? "선택" : `${s}A`}</option>)}</select></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><select name="chilledPipeSize" className="input-field" value={formData.chilledPipeSize} onChange={handleChange}>{SIZES.map(s => <option key={s} value={s}>{s === "" ? "선택" : \`\${s}A\`}</option>)}</select></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="chilledPipeOD" className="input-field" value={formData.chilledPipeOD} onChange={handleChange} /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="chilledPipeThick" className="input-field" value={formData.chilledPipeThick} onChange={handleChange} /></div>
                 <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="chilledPipeSep" className="input-field" value={formData.chilledPipeSep} onChange={handleChange} /></div>
@@ -264,7 +266,7 @@ function CoolingInspectionContent() {
               <h4 style={{ color: '#15803d', marginBottom: '12px' }}>🟢 냉각수 배관 규격</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><select name="coolingPipeMat" className="input-field" value={formData.coolingPipeMat} onChange={handleChange}>{MATERIALS.map(m => <option key={m} value={m}>{m === "" ? "선택" : m}</option>)}</select></div>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><select name="coolingPipeSize" className="input-field" value={formData.coolingPipeSize} onChange={handleChange}>{SIZES.map(s => <option key={s} value={s}>{s === "" ? "선택" : `${s}A`}</option>)}</select></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><select name="coolingPipeSize" className="input-field" value={formData.coolingPipeSize} onChange={handleChange}>{SIZES.map(s => <option key={s} value={s}>{s === "" ? "선택" : \`\${s}A\`}</option>)}</select></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="coolingPipeOD" className="input-field" value={formData.coolingPipeOD} onChange={handleChange} /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="coolingPipeThick" className="input-field" value={formData.coolingPipeThick} onChange={handleChange} /></div>
                 <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="coolingPipeSep" className="input-field" value={formData.coolingPipeSep} onChange={handleChange} /></div>
@@ -511,3 +513,7 @@ function CoolingInspectionContent() {
 export default function CoolingInspectionPage() {
   return <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>}><CoolingInspectionContent /></Suspense>;
 }
+`;
+
+fs.writeFileSync('src/app/cooling/page.tsx', page_code, 'utf8');
+console.log('page.tsx successfully generated.');

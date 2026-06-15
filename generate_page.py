@@ -1,4 +1,4 @@
-'use client';
+page_code = """'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -511,3 +511,8 @@ function CoolingInspectionContent() {
 export default function CoolingInspectionPage() {
   return <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>}><CoolingInspectionContent /></Suspense>;
 }
+"""
+
+with open("src/app/cooling/page.tsx", "w", encoding="utf-8") as f:
+    f.write(page_code)
+print("page.tsx fully rewritten with V5 logic!")
