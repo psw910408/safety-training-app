@@ -35,6 +35,34 @@ const PIPE_DICT: Record<string, {od: string, thick: string, sep: string}> = {
   "카본스틸/압력배관-250": { od: "267.4", thick: "9.3", sep: "239.492" }
 };
 
+const STANDARD_OD: Record<string, string> = {
+  "8": "13.8", "10": "17.3", "15": "21.7", "20": "27.2", "25": "34.0", "32": "42.7", "40": "48.6", "50": "60.5", 
+  "65": "76.3", "80": "89.1", "100": "114.3", "125": "139.8", "150": "165.2", "200": "216.3", "250": "267.4", 
+  "300": "318.5", "350": "355.6", "400": "406.4"
+};
+
+const getPipeSpec = (mat: string, size: string) => {
+  if (!mat || !size) return null;
+  const key = `${mat}-${size}`;
+  if (PIPE_DICT[key]) return PIPE_DICT[key];
+  
+  // 기본 계산 로직 (사전에 없는 조합 방어)
+  if (mat === '동관' || mat === '동') {
+    const odMap: Record<string, string> = { "125": "133.0", "150": "159.0" };
+    const od = odMap[size] || (parseFloat(size) * 1.05).toFixed(1);
+    return { od, thick: "4.0", sep: (parseFloat(od) * 0.7).toFixed(1) };
+  }
+  
+  if (STANDARD_OD[size]) {
+    const od = STANDARD_OD[size];
+    const thick = mat.includes('스테인레스') ? "3.4" : "6.0";
+    const sep = (parseFloat(od) * 0.85).toFixed(1);
+    return { od, thick, sep };
+  }
+  
+  return null;
+};
+
 const INITIAL_FORM = {
   // 냉수 배관 규격 (Step 2)
   chilledPipeMat: '', chilledPipeSize: '', chilledPipeOD: '', chilledPipeThick: '', chilledPipeSep: '',
@@ -172,22 +200,22 @@ function CoolingInspectionContent() {
       const mat = name === 'chilledPipeMat' ? value : formData.chilledPipeMat;
       const size = name === 'chilledPipeSize' ? value : formData.chilledPipeSize;
       const cleanSize = size.toLowerCase().replace(/a$/, '').trim();
-      const key = `${mat.trim()}-${cleanSize}`;
-      if (PIPE_DICT[key]) {
-        newFormData.chilledPipeOD = PIPE_DICT[key].od;
-        newFormData.chilledPipeThick = PIPE_DICT[key].thick;
-        newFormData.chilledPipeSep = PIPE_DICT[key].sep;
+      const spec = getPipeSpec(mat.trim(), cleanSize);
+      if (spec) {
+        newFormData.chilledPipeOD = spec.od;
+        newFormData.chilledPipeThick = spec.thick;
+        newFormData.chilledPipeSep = spec.sep;
       }
     }
     if (name === 'coolingPipeMat' || name === 'coolingPipeSize') {
       const mat = name === 'coolingPipeMat' ? value : formData.coolingPipeMat;
       const size = name === 'coolingPipeSize' ? value : formData.coolingPipeSize;
       const cleanSize = size.toLowerCase().replace(/a$/, '').trim();
-      const key = `${mat.trim()}-${cleanSize}`;
-      if (PIPE_DICT[key]) {
-        newFormData.coolingPipeOD = PIPE_DICT[key].od;
-        newFormData.coolingPipeThick = PIPE_DICT[key].thick;
-        newFormData.coolingPipeSep = PIPE_DICT[key].sep;
+      const spec = getPipeSpec(mat.trim(), cleanSize);
+      if (spec) {
+        newFormData.coolingPipeOD = spec.od;
+        newFormData.coolingPipeThick = spec.thick;
+        newFormData.coolingPipeSep = spec.sep;
       }
     }
 
