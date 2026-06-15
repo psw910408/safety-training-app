@@ -45,8 +45,7 @@ export default function Home() {
       setLoading(true);
       router.push(`/result?phone=${phone}&site=${site}`);
     } else if (type === 'cooling') {
-      alert('냉방점검 페이지 내용은 추후 업데이트 예정입니다.');
-      return;
+      router.push(`/cooling?site=${site}&phone=${phone}`);
     } else if (type === 'material-request') {
       alert('추후 서비스 예정입니다.');
       return;
