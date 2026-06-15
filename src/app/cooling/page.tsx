@@ -234,29 +234,6 @@ function CoolingInspectionContent() {
             )}
             
             <button type="button" className="btn" style={{ marginTop: '24px' }} onClick={() => setStep(2)}>다음 단계로 ➔</button>
-
-            {/* 보관함 (임시 저장 목록) */}
-            {drafts.length > 0 && (
-              <div style={{ marginTop: '32px', borderTop: '2px dashed #cbd5e1', paddingTop: '16px' }}>
-                <h4 style={{ marginBottom: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>💾</span> 임시 저장 보관함 ({drafts.length}건)
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {drafts.map(draft => (
-                    <div key={draft.id} style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>{draft.siteText || '사옥 미지정'} - {draft.eqText}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>저장일시: {draft.date} / 진행: Step {draft.step}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button type="button" onClick={() => handleLoadDraft(draft)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>불러오기</button>
-                        <button type="button" onClick={() => handleDeleteDraft(draft.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -407,6 +384,29 @@ function CoolingInspectionContent() {
           </div>
         )}
       </form>
+
+      {/* 보관함 (모든 스텝에서 공통 노출) */}
+      {drafts.length > 0 && (
+        <div style={{ marginTop: '32px', borderTop: '2px dashed #cbd5e1', paddingTop: '16px', animation: 'fadeIn 0.3s ease' }}>
+          <h4 style={{ marginBottom: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>💾</span> 임시 저장 보관함 ({drafts.length}건)
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {drafts.map(draft => (
+              <div key={draft.id} style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>{draft.siteText || '사옥 미지정'} - {draft.eqText}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>저장일시: {draft.date} / 진행: Step {draft.step}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button type="button" onClick={() => handleLoadDraft(draft)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>불러오기</button>
+                  <button type="button" onClick={() => handleDeleteDraft(draft.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
