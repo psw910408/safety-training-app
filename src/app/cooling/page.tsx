@@ -83,13 +83,13 @@ const calcEnthalpy = (tStr: string, rhStr: string) => {
   const Pw = Pws * (RH / 100);
   const W = 0.622 * Pw / (1013.25 - Pw);
   const h_kJ = 1.006 * T + W * (2501 + 1.84 * T);
-  return (h_kJ / 4.184).toFixed(2);
+  return (h_kJ / 4.186).toFixed(2);
 };
 
 const calcCRT = (flowStr: string, hIn: string, hOut: string) => {
   const flow = parseFloat(flowStr); const hin = parseFloat(hIn); const hout = parseFloat(hOut);
   if (isNaN(flow) || isNaN(hin) || isNaN(hout)) return '-';
-  return ((flow * 1.2 * Math.abs(hout - hin)) / 3320).toFixed(1);
+  return ((flow * 1.2 * Math.abs(hout - hin)) / 3900).toFixed(1);
 };
 
 function CoolingInspectionContent() {
@@ -132,7 +132,7 @@ function CoolingInspectionContent() {
 
   useEffect(() => {
     const siteEqs = masterData[siteText] || [];
-    const matchedEq = siteEqs.find(e => e.name === eqText);
+    const matchedEq = siteEqs.length > 0 ? siteEqs[0] : null;
     setEqSpecs(matchedEq || null);
     
     if (matchedEq) {
@@ -201,7 +201,12 @@ function CoolingInspectionContent() {
 
   return (
     <div className="card" style={{ padding: '20px', position: 'relative' }}>
-      <style>{`input::-webkit-calendar-picker-indicator { display: none !important; } input[type="date"]::-webkit-calendar-picker-indicator { display: block !important; }`}</style>
+      <style>{`
+    input::-webkit-calendar-picker-indicator { display: none !important; } 
+    input[type="date"]::-webkit-calendar-picker-indicator { display: block !important; }
+    td .input-field { min-width: 60px; padding: 6px; }
+    th { padding: 8px 4px; }
+  `}</style>
       <div className="header" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div><h2>❄️ 냉방장비 성능점검</h2><p>V5 엔지니어링 폼</p></div>
         <div style={{ textAlign: 'right' }}>
@@ -230,7 +235,7 @@ function CoolingInspectionContent() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
               <div><label style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>사옥 선택</label><input type="text" list="site-list" className="input-field" value={siteText} onChange={(e) => setSiteText(e.target.value)} placeholder="ex: 종로타워" /><datalist id="site-list">{Object.keys(masterData).map(s => <option key={s} value={s} />)}</datalist></div>
-              <div><label style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>점검 냉동기 선택</label><input type="text" list="eq-list" className="input-field" value={eqText} onChange={(e) => setEqText(e.target.value)} /><datalist id="eq-list">{(masterData[siteText] || []).map(eq => <option key={eq.name} value={eq.name} />)}</datalist></div>
+              
             </div>
 
             <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #10b981', marginBottom: '24px' }}>
@@ -302,7 +307,7 @@ function CoolingInspectionContent() {
             <div style={{ marginBottom: '24px', border: '1px solid #0369a1', borderRadius: '8px', padding: '12px' }}>
               <h4 style={{ marginBottom: '12px', color: '#0369a1' }}>💧 [냉각 유량 및 온도] (측정값 필수입력)</h4>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '400px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '600px', whiteSpace: 'nowrap' }}>
                   <thead><tr style={{ background: '#f1f5f9' }}><th>구분</th><th>유량(LPM)</th><th>입구온도</th><th>출구온도</th><th>ΔT</th><th>RT계산</th></tr></thead>
                   <tbody>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}><td style={{ fontWeight: 'bold' }}>냉수(측정)</td>
@@ -328,7 +333,7 @@ function CoolingInspectionContent() {
             <div style={{ marginBottom: '24px', border: '1px solid #10b981', borderRadius: '8px', padding: '12px' }}>
               <h4 style={{ marginBottom: '12px', color: '#047857' }}>🔄 [펌프운전 현황] (냉수/냉각수)</h4>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '600px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '800px', whiteSpace: 'nowrap' }}>
                   <thead><tr style={{ background: '#f1f5f9' }}><th>구분</th><th>인버터(Hz)</th><th>전류(A)</th><th>유량</th><th>양정</th><th>입구압력</th><th>출구압력</th><th>ΔP(출-입)</th></tr></thead>
                   <tbody>
                     <tr><td colSpan={8} style={{background:'#f0fdf4', fontWeight:'bold', padding:'4px'}}>🔵 냉수펌프</td></tr>
@@ -378,7 +383,7 @@ function CoolingInspectionContent() {
             <div style={{ marginBottom: '24px', border: '1px solid #8b5cf6', borderRadius: '8px', padding: '12px' }}>
               <h4 style={{ marginBottom: '12px', color: '#6d28d9' }}>💨 [냉각탑운전 현황] (공기선도 자동계산)</h4>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '700px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '1000px', whiteSpace: 'nowrap' }}>
                   <thead><tr style={{ background: '#f5f3ff' }}><th>구분</th><th>인버터</th><th>전류</th><th>풍량(m3/h)</th><th>정압</th><th>입구T</th><th>입구RH%</th><th>입구WB</th><th>입구H(kcal)</th><th>출구T</th><th>출구RH%</th><th>출구WB</th><th>출구H(kcal)</th><th>CRT</th></tr></thead>
                   <tbody>
                     <tr style={{ borderBottom: '1px dashed #e2e8f0' }}><td>정격</td>
