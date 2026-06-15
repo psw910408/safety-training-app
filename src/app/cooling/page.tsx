@@ -120,6 +120,11 @@ function CoolingInspectionContent() {
 
   return (
     <div className="card" style={{ padding: '20px', position: 'relative' }}>
+      <style>{`
+        input::-webkit-calendar-picker-indicator {
+          display: none !important;
+        }
+      `}</style>
       <div className="header" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2>❄️ 냉방장비 성능점검</h2>
