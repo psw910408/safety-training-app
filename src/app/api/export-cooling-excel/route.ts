@@ -60,8 +60,18 @@ export async function POST(request: Request) {
     
     // calc measured RT
     const calcDiff = (v1: string, v2: string) => (parseFloat(v1) - parseFloat(v2)) || 0;
-    const measuredRt = ((parseFloat(formData.chilledFlowMeasure) * 60 * Math.abs(calcDiff(formData.chilledTempInMeasure, formData.chilledTempOutMeasure))) / 3024).toFixed(1);
-    const loadFactor = (!isNaN(parseFloat(measuredRt)) && !isNaN(parseFloat(formData.eqCapacity))) ? ((parseFloat(measuredRt) / parseFloat(formData.eqCapacity)) * 100).toFixed(1) : '-';
+    const calcRtExcel = (flow: string, tIn: string, tOut: string) => {
+      const diff = calcDiff(tIn, tOut);
+      if (!diff || isNaN(parseFloat(flow))) return '-';
+      return ((parseFloat(flow) * 60 * Math.abs(diff)) / 3024).toFixed(1);
+    };
+
+    const designRt = calcRtExcel(formData.chilledFlowDesign, formData.chilledTempInDesign, formData.chilledTempOutDesign);
+    const measuredRt = calcRtExcel(formData.chilledFlowMeasure, formData.chilledTempInMeasure, formData.chilledTempOutMeasure);
+    
+    const dRtVal = parseFloat(designRt);
+    const mRtVal = parseFloat(measuredRt);
+    const loadFactor = (!isNaN(mRtVal) && !isNaN(dRtVal) && dRtVal !== 0) ? ((mRtVal / dRtVal) * 100).toFixed(1) : '-';
     const panelKvaM = ((1.732 * parseFloat(formData.panelVoltM) * parseFloat(formData.panelCurM)) / 1000).toFixed(1);
     const panelKwM = (parseFloat(panelKvaM) * parseFloat(formData.panelPfM)).toFixed(1);
     const panelRtM = (parseFloat(panelKwM) * 860 / 3024).toFixed(1);
@@ -79,11 +89,7 @@ export async function POST(request: Request) {
     const heatH2 = ['비고', '배관(mm)', '입구(℃)', '출구(℃)', '▲T', '냉방열량(RT)', '배관(mm)', '입구(℃)', '출구(℃)', '▲T', '냉각열량(RT)'];
     heatH2.forEach((h, i) => { const c = sheet.getCell(12, i+1); c.value = h; applyStyle(c, 'D9E1F2'); });
     
-    const calcRtExcel = (flow: string, tIn: string, tOut: string) => {
-      const diff = calcDiff(tIn, tOut);
-      if (!diff || isNaN(parseFloat(flow))) return '-';
-      return ((parseFloat(flow) * 60 * Math.abs(diff)) / 3024).toFixed(1);
-    };
+    // calcRtExcel already defined above
 
     const heatD = ['정격', `${formData.chilledPipeSize}A`, formData.chilledTempInDesign, formData.chilledTempOutDesign, Math.abs(calcDiff(formData.chilledTempInDesign, formData.chilledTempOutDesign)).toFixed(1), calcRtExcel(formData.chilledFlowDesign, formData.chilledTempInDesign, formData.chilledTempOutDesign),
       `${formData.coolingPipeSize}A`, formData.coolingTempInDesign, formData.coolingTempOutDesign, Math.abs(calcDiff(formData.coolingTempInDesign, formData.coolingTempOutDesign)).toFixed(1), calcRtExcel(formData.coolingFlowDesign, formData.coolingTempInDesign, formData.coolingTempOutDesign)

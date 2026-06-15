@@ -241,8 +241,13 @@ function CoolingInspectionContent() {
   const panelKwM = (parseFloat(panelKvaM) * parseFloat(formData.panelPfM)).toFixed(1);
   const panelRtM = (parseFloat(panelKwM) * 860 / 3024).toFixed(1);
 
+  const designRt = calcRT(formData.chilledFlowDesign, formData.chilledTempInDesign, formData.chilledTempOutDesign);
   const measuredRt = calcRT(formData.chilledFlowMeasure, formData.chilledTempInMeasure, formData.chilledTempOutMeasure);
-  const loadFactor = (!isNaN(parseFloat(measuredRt)) && !isNaN(parseFloat(formData.eqCapacity))) ? ((parseFloat(measuredRt) / parseFloat(formData.eqCapacity)) * 100).toFixed(1) : '-';
+  
+  const dRtVal = parseFloat(designRt);
+  const mRtVal = parseFloat(measuredRt);
+  const loadFactor = (!isNaN(mRtVal) && !isNaN(dRtVal) && dRtVal !== 0) ? ((mRtVal / dRtVal) * 100).toFixed(1) : '-';
+
   const copD = (!isNaN(parseFloat(formData.eqCapacity)) && !isNaN(parseFloat(formData.eqPower))) ? (parseFloat(formData.eqCapacity) / (parseFloat(formData.eqPower) * 860 / 3024)).toFixed(2) : '-';
   const copM = (!isNaN(parseFloat(measuredRt)) && !isNaN(parseFloat(panelRtM))) ? (parseFloat(measuredRt) / parseFloat(panelRtM)).toFixed(2) : '-';
 
@@ -525,7 +530,7 @@ function CoolingInspectionContent() {
                 <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px' }}>부하율 (%)</div>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb' }}>{loadFactor !== 'NaN' ? loadFactor : '-'}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '8px' }}>(측정 냉수RT / 정격 용량)</div>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '8px' }}>(측정 냉수RT / 냉수 정격RT)</div>
                 </div>
                 <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px' }}>COP (정격)</div>
