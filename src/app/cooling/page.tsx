@@ -51,35 +51,67 @@ function CoolingInspectionContent() {
   const [eqSpecs, setEqSpecs] = useState<ChillerData | null>(null);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
 
   // 로컬 스토리지 키
-  const STORAGE_KEY = 'cooling_inspection_backup';
+  const STORAGE_KEY = 'cooling_inspection_drafts';
 
   // 로드 로직
   useEffect(() => {
     const backup = localStorage.getItem(STORAGE_KEY);
     if (backup) {
       try {
-        const parsed = JSON.parse(backup);
-        if (confirm('저장된 점검 기록이 있습니다. 불러오시겠습니까?')) {
-          setSiteText(parsed.siteText || '');
-          setEqText(parsed.eqText || '');
-          setFormData(parsed.formData || INITIAL_FORM);
-          setStep(parsed.step || 1);
-        }
+        setDrafts(JSON.parse(backup));
       } catch (e) {
-        console.error('Backup load failed', e);
+        console.error('Drafts load failed', e);
       }
     }
   }, []);
 
   // 중간 저장 로직
   const handleSaveDraft = () => {
-    const dataToSave = { siteText, eqText, formData, step };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    const timeStr = new Date().toLocaleTimeString();
-    setLastSaved(timeStr);
-    alert(`현재 상태가 안전하게 중간 저장되었습니다. (${timeStr})`);
+    const timeStr = new Date().toLocaleString();
+    const newDraft = {
+      id: currentDraftId || Date.now(),
+      siteText,
+      eqText: eqText || '기기 미지정',
+      date: timeStr,
+      formData,
+      step
+    };
+    
+    let updatedDrafts = [];
+    if (currentDraftId) {
+      updatedDrafts = drafts.map(d => d.id === currentDraftId ? newDraft : d);
+    } else {
+      updatedDrafts = [...drafts, newDraft];
+      setCurrentDraftId(newDraft.id);
+    }
+    
+    setDrafts(updatedDrafts);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDrafts));
+    setLastSaved(new Date().toLocaleTimeString());
+    alert(`현재 상태가 보관함에 저장되었습니다! 화면 아래에서 저장된 목록을 확인할 수 있습니다.`);
+  };
+
+  const handleLoadDraft = (draft: any) => {
+    if (confirm('현재 작성 중인 내용이 덮어씌워집니다. 불러오시겠습니까?')) {
+      setSiteText(draft.siteText || '');
+      setEqText(draft.eqText || '');
+      setFormData(draft.formData || INITIAL_FORM);
+      setStep(draft.step || 1);
+      setCurrentDraftId(draft.id);
+    }
+  };
+
+  const handleDeleteDraft = (id: number) => {
+    if (confirm('이 임시 저장본을 완전히 삭제하시겠습니까?')) {
+      const updated = drafts.filter(d => d.id !== id);
+      setDrafts(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      if (currentDraftId === id) setCurrentDraftId(null);
+    }
   };
 
   // 자동완성 데이터 매칭
@@ -96,7 +128,11 @@ function CoolingInspectionContent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     alert('냉방점검 최종 데이터가 성공적으로 처리되었습니다!');
-    localStorage.removeItem(STORAGE_KEY); // 제출 완료 후 로컬 백업 삭제
+    if (currentDraftId) {
+      const updated = drafts.filter(d => d.id !== currentDraftId);
+      setDrafts(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    }
     router.push('/');
   };
 
@@ -198,6 +234,29 @@ function CoolingInspectionContent() {
             )}
             
             <button type="button" className="btn" style={{ marginTop: '24px' }} onClick={() => setStep(2)}>다음 단계로 ➔</button>
+
+            {/* 보관함 (임시 저장 목록) */}
+            {drafts.length > 0 && (
+              <div style={{ marginTop: '32px', borderTop: '2px dashed #cbd5e1', paddingTop: '16px' }}>
+                <h4 style={{ marginBottom: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>💾</span> 임시 저장 보관함 ({drafts.length}건)
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {drafts.map(draft => (
+                    <div key={draft.id} style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>{draft.siteText || '사옥 미지정'} - {draft.eqText}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>저장일시: {draft.date} / 진행: Step {draft.step}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button type="button" onClick={() => handleLoadDraft(draft)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>불러오기</button>
+                        <button type="button" onClick={() => handleDeleteDraft(draft.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
