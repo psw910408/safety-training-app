@@ -357,14 +357,30 @@ function CoolingInspectionContent() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '600px', whiteSpace: 'nowrap' }}>
                   <thead><tr style={{ background: '#f1f5f9' }}><th>구분</th><th>유량(LPM)</th><th>입구온도</th><th>출구온도</th><th>ΔT</th><th>RT계산</th></tr></thead>
                   <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}><td style={{ fontWeight: 'bold' }}>냉수(측정)</td>
+                    <tr><td colSpan={6} style={{background:'#f0fdf4', fontWeight:'bold', padding:'4px'}}>🔵 냉수</td></tr>
+                    <tr style={{ borderBottom: '1px dashed #e2e8f0' }}><td>정격</td>
+                      <td><input type="number" name="chilledFlowDesign" className="input-field" value={formData.chilledFlowDesign} onChange={handleChange} /></td>
+                      <td><input type="number" name="chilledTempInDesign" className="input-field" value={formData.chilledTempInDesign} onChange={handleChange} /></td>
+                      <td><input type="number" name="chilledTempOutDesign" className="input-field" value={formData.chilledTempOutDesign} onChange={handleChange} /></td>
+                      <td style={{textAlign:'center', fontWeight:'bold'}}>{Math.abs(calcDiff(formData.chilledTempInDesign, formData.chilledTempOutDesign)).toFixed(1)}</td>
+                      <td style={{textAlign:'center', fontWeight:'bold', color:'#0369a1'}}>{calcRT(formData.chilledFlowDesign, formData.chilledTempInDesign, formData.chilledTempOutDesign)}</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}><td style={{ fontWeight: 'bold' }}>측정</td>
                       <td><input type="number" name="chilledFlowMeasure" className="input-field" value={formData.chilledFlowMeasure} onChange={handleChange} /></td>
                       <td><input type="number" name="chilledTempInMeasure" className="input-field" value={formData.chilledTempInMeasure} onChange={handleChange} /></td>
                       <td><input type="number" name="chilledTempOutMeasure" className="input-field" value={formData.chilledTempOutMeasure} onChange={handleChange} /></td>
                       <td style={{textAlign:'center', fontWeight:'bold'}}>{Math.abs(calcDiff(formData.chilledTempInMeasure, formData.chilledTempOutMeasure)).toFixed(1)}</td>
                       <td style={{textAlign:'center', fontWeight:'bold', color:'#0369a1'}}>{calcRT(formData.chilledFlowMeasure, formData.chilledTempInMeasure, formData.chilledTempOutMeasure)}</td>
                     </tr>
-                    <tr><td style={{ fontWeight: 'bold' }}>냉각수(측정)</td>
+                    <tr><td colSpan={6} style={{background:'#f0fdf4', fontWeight:'bold', padding:'4px'}}>🟢 냉각수</td></tr>
+                    <tr style={{ borderBottom: '1px dashed #e2e8f0' }}><td>정격</td>
+                      <td><input type="number" name="coolingFlowDesign" className="input-field" value={formData.coolingFlowDesign} onChange={handleChange} /></td>
+                      <td><input type="number" name="coolingTempInDesign" className="input-field" value={formData.coolingTempInDesign} onChange={handleChange} /></td>
+                      <td><input type="number" name="coolingTempOutDesign" className="input-field" value={formData.coolingTempOutDesign} onChange={handleChange} /></td>
+                      <td style={{textAlign:'center', fontWeight:'bold'}}>{Math.abs(calcDiff(formData.coolingTempInDesign, formData.coolingTempOutDesign)).toFixed(1)}</td>
+                      <td style={{textAlign:'center', fontWeight:'bold', color:'#15803d'}}>{calcRT(formData.coolingFlowDesign, formData.coolingTempInDesign, formData.coolingTempOutDesign)}</td>
+                    </tr>
+                    <tr><td style={{ fontWeight: 'bold' }}>측정</td>
                       <td><input type="number" name="coolingFlowMeasure" className="input-field" value={formData.coolingFlowMeasure} onChange={handleChange} /></td>
                       <td><input type="number" name="coolingTempInMeasure" className="input-field" value={formData.coolingTempInMeasure} onChange={handleChange} /></td>
                       <td><input type="number" name="coolingTempOutMeasure" className="input-field" value={formData.coolingTempOutMeasure} onChange={handleChange} /></td>

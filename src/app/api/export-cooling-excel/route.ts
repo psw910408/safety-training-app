@@ -79,28 +79,38 @@ export async function POST(request: Request) {
     const heatH2 = ['비고', '배관(mm)', '입구(℃)', '출구(℃)', '▲T', '냉방열량(RT)', '배관(mm)', '입구(℃)', '출구(℃)', '▲T', '냉각열량(RT)'];
     heatH2.forEach((h, i) => { const c = sheet.getCell(12, i+1); c.value = h; applyStyle(c, 'D9E1F2'); });
     
-    const heatVals = ['측정', `${formData.chilledPipeSize}A`, formData.chilledTempInMeasure, formData.chilledTempOutMeasure, Math.abs(calcDiff(formData.chilledTempInMeasure, formData.chilledTempOutMeasure)).toFixed(1), measuredRt,
-      `${formData.coolingPipeSize}A`, formData.coolingTempInMeasure, formData.coolingTempOutMeasure, Math.abs(calcDiff(formData.coolingTempInMeasure, formData.coolingTempOutMeasure)).toFixed(1), 
-      ((parseFloat(formData.coolingFlowMeasure) * 60 * Math.abs(calcDiff(formData.coolingTempInMeasure, formData.coolingTempOutMeasure))) / 3024).toFixed(1)
-    ];
-    heatVals.forEach((v, i) => { const c = sheet.getCell(13, i+1); c.value = v; applyStyle(c); });
+    const calcRtExcel = (flow: string, tIn: string, tOut: string) => {
+      const diff = calcDiff(tIn, tOut);
+      if (!diff || isNaN(parseFloat(flow))) return '-';
+      return ((parseFloat(flow) * 60 * Math.abs(diff)) / 3024).toFixed(1);
+    };
 
-    // Row 15: 4. 전력량 측정
-    sheet.mergeCells('A15:O15'); sheet.getCell('A15').value = '3. 전력량 측정 (판넬)'; sheet.getCell('A15').font = { bold: true };
+    const heatD = ['정격', `${formData.chilledPipeSize}A`, formData.chilledTempInDesign, formData.chilledTempOutDesign, Math.abs(calcDiff(formData.chilledTempInDesign, formData.chilledTempOutDesign)).toFixed(1), calcRtExcel(formData.chilledFlowDesign, formData.chilledTempInDesign, formData.chilledTempOutDesign),
+      `${formData.coolingPipeSize}A`, formData.coolingTempInDesign, formData.coolingTempOutDesign, Math.abs(calcDiff(formData.coolingTempInDesign, formData.coolingTempOutDesign)).toFixed(1), calcRtExcel(formData.coolingFlowDesign, formData.coolingTempInDesign, formData.coolingTempOutDesign)
+    ];
+    heatD.forEach((v, i) => { const c = sheet.getCell(13, i+1); c.value = v; applyStyle(c); });
+
+    const heatM = ['측정', '', formData.chilledTempInMeasure, formData.chilledTempOutMeasure, Math.abs(calcDiff(formData.chilledTempInMeasure, formData.chilledTempOutMeasure)).toFixed(1), measuredRt,
+      '', formData.coolingTempInMeasure, formData.coolingTempOutMeasure, Math.abs(calcDiff(formData.coolingTempInMeasure, formData.coolingTempOutMeasure)).toFixed(1), calcRtExcel(formData.coolingFlowMeasure, formData.coolingTempInMeasure, formData.coolingTempOutMeasure)
+    ];
+    heatM.forEach((v, i) => { const c = sheet.getCell(14, i+1); c.value = v; applyStyle(c); });
+
+    // Row 16: 4. 전력량 측정
+    sheet.mergeCells('A16:O16'); sheet.getCell('A16').value = '3. 전력량 측정 (판넬)'; sheet.getCell('A16').font = { bold: true };
     const pwrH = ['구 분', '전압(V)', '전류(A)', '평균(KVA)', '역율', '운전전력(KW)', '환산(RT)', '', '', '', '', '', '', '', ''];
-    pwrH.forEach((h, i) => { const c = sheet.getCell(16, i+1); c.value = h; applyStyle(c, 'FCE4D6'); });
+    pwrH.forEach((h, i) => { const c = sheet.getCell(17, i+1); c.value = h; applyStyle(c, 'FCE4D6'); });
     
     const panelKvaD = ((1.732 * parseFloat(formData.panelVoltD) * parseFloat(formData.panelCurD)) / 1000).toFixed(1);
     const panelKwD = (parseFloat(panelKvaD) * parseFloat(formData.panelPfD)).toFixed(1);
     const panelRtD = (parseFloat(panelKwD) * 860 / 3024).toFixed(1);
 
     const pwrD = ['정격', formData.panelVoltD, formData.panelCurD, panelKvaD, formData.panelPfD, panelKwD, panelRtD, '', '', '', '', '', '', '', ''];
-    pwrD.forEach((v, i) => { const c = sheet.getCell(17, i+1); c.value = v; applyStyle(c); });
+    pwrD.forEach((v, i) => { const c = sheet.getCell(18, i+1); c.value = v; applyStyle(c); });
     const pwrM = ['측정', formData.panelVoltM, formData.panelCurM, panelKvaM, formData.panelPfM, panelKwM, panelRtM, '', '', '', '', '', '', '', ''];
-    pwrM.forEach((v, i) => { const c = sheet.getCell(18, i+1); c.value = v; applyStyle(c); });
+    pwrM.forEach((v, i) => { const c = sheet.getCell(19, i+1); c.value = v; applyStyle(c); });
 
-    // Row 20: 5. 냉동기 운전상태
-    sheet.mergeCells('A20:O20'); sheet.getCell('A20').value = '4. 냉동기 운전상태 [Control 판넬 상태값]'; sheet.getCell('A20').font = { bold: true };
+    // Row 21: 5. 냉동기 운전상태
+    sheet.mergeCells('A21:O21'); sheet.getCell('A21').value = '4. 냉동기 운전상태 [Control 판넬 상태값]'; sheet.getCell('A21').font = { bold: true };
     const cpMap = [
       ['냉수입구온도(℃)', formData.cpChilledIn, '냉수출구온도(℃)', formData.cpChilledOut, '용량제어(%)', formData.cpCapCtrl],
       ['냉각수입구온도(℃)', formData.cpCoolingIn, '냉각수출구온도(℃)', formData.cpCoolingOut, '전류(A)', formData.cpCurrent],
@@ -108,7 +118,7 @@ export async function POST(request: Request) {
       ['증발기압력', formData.cpEvapPress, '응축기압력', formData.cpCondPress, '오일압력', formData.cpOilPress],
       ['오일차압', formData.cpOilDiffPress, '', '', '', '']
     ];
-    let cpRow = 21;
+    let cpRow = 22;
     cpMap.forEach(row => {
       for(let i=0; i<3; i++) {
         sheet.mergeCells(cpRow, i*3 + 1, cpRow, i*3 + 2);
