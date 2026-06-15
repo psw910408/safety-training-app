@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import masterData from '@/data/chillerMasterData.json';
 
@@ -15,7 +15,7 @@ type ChillerData = {
   coolingWaterPipe: any;
 };
 
-export default function CoolingInspectionPage() {
+function CoolingInspectionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultSite = searchParams.get('site') === 'samhwa' ? '삼화타워' : '종로타워';
@@ -221,5 +221,13 @@ export default function CoolingInspectionPage() {
         )}
       </form>
     </div>
+  );
+}
+
+export default function CoolingInspectionPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>}>
+      <CoolingInspectionContent />
+    </Suspense>
   );
 }
