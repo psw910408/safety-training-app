@@ -17,6 +17,9 @@ type ChillerData = {
   coolingWaterPipe: { size: string, material: string, outerDiameter: string, thickness: string, separation: string };
 };
 
+const MATERIALS = ["", "카본스틸", "카본스틸/압력배관", "동관", "동", "스테인레스"];
+const SIZES = ["", "8", "10", "15", "20", "25", "32", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300", "350", "400"];
+
 const PIPE_DICT: Record<string, {od: string, thick: string, sep: string}> = {
   "카본스틸-200": { od: "216.3", thick: "5.85", sep: "187.511" },
   "카본스틸-250": { od: "267.4", thick: "6.4", sep: "239.492" },
@@ -135,17 +138,20 @@ function CoolingInspectionContent() {
     const matchedEq = siteEqs.find(e => e.name === eqText);
     setEqSpecs(matchedEq || null);
 
+    const normalizeMat = (m: string) => m.includes('스테인레스') ? '스테인레스' : m;
+    const normalizeSize = (s: string) => s.toLowerCase().replace(/a$/, '').trim();
+
     if (matchedEq) {
       setFormData(prev => ({
         ...prev,
-        chilledPipeMat: matchedEq.chilledWaterPipe?.material || prev.chilledPipeMat,
-        chilledPipeSize: matchedEq.chilledWaterPipe?.size || prev.chilledPipeSize,
+        chilledPipeMat: normalizeMat(matchedEq.chilledWaterPipe?.material || prev.chilledPipeMat),
+        chilledPipeSize: normalizeSize(matchedEq.chilledWaterPipe?.size || prev.chilledPipeSize),
         chilledPipeOD: matchedEq.chilledWaterPipe?.outerDiameter || prev.chilledPipeOD,
         chilledPipeThick: matchedEq.chilledWaterPipe?.thickness || prev.chilledPipeThick,
         chilledPipeSep: matchedEq.chilledWaterPipe?.separation || prev.chilledPipeSep,
         
-        coolingPipeMat: matchedEq.coolingWaterPipe?.material || prev.coolingPipeMat,
-        coolingPipeSize: matchedEq.coolingWaterPipe?.size || prev.coolingPipeSize,
+        coolingPipeMat: normalizeMat(matchedEq.coolingWaterPipe?.material || prev.coolingPipeMat),
+        coolingPipeSize: normalizeSize(matchedEq.coolingWaterPipe?.size || prev.coolingPipeSize),
         coolingPipeOD: matchedEq.coolingWaterPipe?.outerDiameter || prev.coolingPipeOD,
         coolingPipeThick: matchedEq.coolingWaterPipe?.thickness || prev.coolingPipeThick,
         coolingPipeSep: matchedEq.coolingWaterPipe?.separation || prev.coolingPipeSep,
@@ -325,8 +331,18 @@ function CoolingInspectionContent() {
             <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #0369a1', marginBottom: '16px' }}>
               <h4 style={{ color: '#0369a1', marginBottom: '12px' }}>🔵 냉수 배관 규격</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="chilledPipeMat" className="input-field" value={formData.chilledPipeMat} onChange={handleChange} placeholder="ex) 카본스틸" /></div>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="chilledPipeSize" className="input-field" value={formData.chilledPipeSize} onChange={handleChange} placeholder="ex) 200" /></div>
+                <div>
+                  <label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label>
+                  <select name="chilledPipeMat" className="input-field" value={formData.chilledPipeMat} onChange={handleChange}>
+                    {MATERIALS.map(m => <option key={m} value={m}>{m === "" ? "선택" : m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label>
+                  <select name="chilledPipeSize" className="input-field" value={formData.chilledPipeSize} onChange={handleChange}>
+                    {SIZES.map(s => <option key={s} value={s}>{s === "" ? "선택" : `${s}A`}</option>)}
+                  </select>
+                </div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="chilledPipeOD" className="input-field" value={formData.chilledPipeOD} onChange={handleChange} /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="chilledPipeThick" className="input-field" value={formData.chilledPipeThick} onChange={handleChange} /></div>
                 <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="chilledPipeSep" className="input-field" value={formData.chilledPipeSep} onChange={handleChange} /></div>
@@ -336,8 +352,18 @@ function CoolingInspectionContent() {
             <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #15803d', marginBottom: '24px' }}>
               <h4 style={{ color: '#15803d', marginBottom: '12px' }}>🟢 냉각수 배관 규격</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="coolingPipeMat" className="input-field" value={formData.coolingPipeMat} onChange={handleChange} placeholder="ex) 동관" /></div>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="coolingPipeSize" className="input-field" value={formData.coolingPipeSize} onChange={handleChange} placeholder="ex) 250" /></div>
+                <div>
+                  <label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label>
+                  <select name="coolingPipeMat" className="input-field" value={formData.coolingPipeMat} onChange={handleChange}>
+                    {MATERIALS.map(m => <option key={m} value={m}>{m === "" ? "선택" : m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label>
+                  <select name="coolingPipeSize" className="input-field" value={formData.coolingPipeSize} onChange={handleChange}>
+                    {SIZES.map(s => <option key={s} value={s}>{s === "" ? "선택" : `${s}A`}</option>)}
+                  </select>
+                </div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="coolingPipeOD" className="input-field" value={formData.coolingPipeOD} onChange={handleChange} /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="coolingPipeThick" className="input-field" value={formData.coolingPipeThick} onChange={handleChange} /></div>
                 <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="coolingPipeSep" className="input-field" value={formData.coolingPipeSep} onChange={handleChange} /></div>
