@@ -196,7 +196,7 @@ function CoolingInspectionContent() {
 
   const measuredRt = calcRT(formData.chilledFlowMeasure, formData.chilledTempInMeasure, formData.chilledTempOutMeasure);
   const loadFactor = (!isNaN(parseFloat(measuredRt)) && !isNaN(parseFloat(formData.eqCapacity))) ? ((parseFloat(measuredRt) / parseFloat(formData.eqCapacity)) * 100).toFixed(1) : '-';
-  const copD = (!isNaN(parseFloat(formData.eqCapacity)) && !isNaN(parseFloat(panelRtD))) ? (parseFloat(formData.eqCapacity) / parseFloat(panelRtD)).toFixed(2) : '-';
+  const copD = (!isNaN(parseFloat(formData.eqCapacity)) && !isNaN(parseFloat(formData.eqPower))) ? (parseFloat(formData.eqCapacity) / (parseFloat(formData.eqPower) * 860 / 3024)).toFixed(2) : '-';
   const copM = (!isNaN(parseFloat(measuredRt)) && !isNaN(parseFloat(panelRtM))) ? (parseFloat(measuredRt) / parseFloat(panelRtM)).toFixed(2) : '-';
 
   return (
