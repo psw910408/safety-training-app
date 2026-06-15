@@ -105,6 +105,30 @@ function CoolingInspectionContent() {
   const [completed, setCompleted] = useState<any[]>([]);
   const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
 
+  
+  const handleDeleteDraft = (id: number) => {
+    if (!confirm('삭제하시겠습니까?')) return;
+    const updated = drafts.filter(d => d.id !== id);
+    setDrafts(updated); localStorage.setItem('cooling_inspection_drafts', JSON.stringify(updated));
+  };
+  const handleRenameDraft = (id: number) => {
+    const newTitle = prompt('새로운 이름을 입력하세요:');
+    if (!newTitle) return;
+    const updated = drafts.map(d => d.id === id ? { ...d, title: newTitle } : d);
+    setDrafts(updated); localStorage.setItem('cooling_inspection_drafts', JSON.stringify(updated));
+  };
+  const handleDeleteComp = (id: number) => {
+    if (!confirm('삭제하시겠습니까?')) return;
+    const updated = completed.filter(d => d.id !== id);
+    setCompleted(updated); localStorage.setItem('cooling_inspection_completed', JSON.stringify(updated));
+  };
+  const handleRenameComp = (id: number) => {
+    const newTitle = prompt('새로운 이름을 입력하세요:');
+    if (!newTitle) return;
+    const updated = completed.map(d => d.id === id ? { ...d, title: newTitle } : d);
+    setCompleted(updated); localStorage.setItem('cooling_inspection_completed', JSON.stringify(updated));
+  };
+
   useEffect(() => {
     try {
       const backup = localStorage.getItem('cooling_inspection_drafts');
@@ -115,7 +139,7 @@ function CoolingInspectionContent() {
   }, []);
 
   const handleSaveDraft = () => {
-    const newDraft = { id: currentDraftId || Date.now(), siteText, eqText: eqText || '기기 미지정', date: new Date().toLocaleString(), formData, step };
+    const newDraft = { id: currentDraftId || Date.now(), siteText, eqText: eqText || '기기 미지정', title: `${siteText || '미지정'}-${eqText || '기기 미지정'}`, date: new Date().toLocaleString(), formData, step };
     const updatedDrafts = currentDraftId ? drafts.map(d => d.id === currentDraftId ? newDraft : d) : [...drafts, newDraft];
     if (!currentDraftId) setCurrentDraftId(newDraft.id);
     setDrafts(updatedDrafts);
@@ -163,21 +187,44 @@ function CoolingInspectionContent() {
     setFormData(newFormData);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newComp = { id: Date.now(), siteText, eqText: eqText || '미지정', date: new Date().toLocaleString(), formData };
+    const newComp = { id: Date.now(), siteText, eqText: eqText || '미지정', title: `${siteText || '미지정'}-${eqText || '미지정'}`, date: new Date().toLocaleString(), formData };
     const updatedComp = [newComp, ...completed];
     setCompleted(updatedComp);
     localStorage.setItem('cooling_inspection_completed', JSON.stringify(updatedComp));
+    
+    // Excel Export Call
+    try {
+      const res = await fetch('/api/export-cooling-excel', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formData, siteText, eqText })
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `Cooling_Inspection_${eqText || 'Report'}.xlsx`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      } else {
+        alert('엑셀 생성에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('엑셀 생성 오류 발생');
+    }
+
     if (currentDraftId) {
       const updatedDrafts = drafts.filter(d => d.id !== currentDraftId);
       setDrafts(updatedDrafts);
       localStorage.setItem('cooling_inspection_drafts', JSON.stringify(updatedDrafts));
     }
-    alert('최종 완료되었습니다!');
+    alert('최종 저장 및 엑셀 다운로드가 완료되었습니다!');
     setFormData(INITIAL_FORM); setSiteText(''); setEqText(''); setCurrentDraftId(null); setStep(1);
     setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
   };
+
 
   const calcDiff = (v1: string, v2: string) => (parseFloat(v1) - parseFloat(v2)) || 0;
   const calcRT = (lpm: string, t1: string, t2: string) => {
@@ -208,7 +255,7 @@ function CoolingInspectionContent() {
     th { padding: 8px 4px; }
   `}</style>
       <div className="header" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div><h2>❄️ 냉방장비 성능점검</h2><p>V5 엔지니어링 폼</p></div>
+        <div><h2>❄️ 냉방장비 성능점검</h2></div>
         <div style={{ textAlign: 'right' }}>
           <button type="button" onClick={handleSaveDraft} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>💾 임시 저장</button>
         </div>
@@ -489,8 +536,8 @@ function CoolingInspectionContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {drafts.map(draft => (
               <div key={draft.id} style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div><div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>{draft.siteText || '사옥 미지정'} - {draft.eqText}</div><div style={{ fontSize: '0.75rem', color: '#64748b' }}>저장일시: {draft.date} / 진행: {draft.step}단계</div></div>
-                <div style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={() => handleLoadDraft(draft)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>불러오기</button></div>
+                <div><div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>{draft.title || `${draft.siteText || '사옥 미지정'}-${draft.eqText}`} <span onClick={() => handleRenameDraft(draft.id)} style={{cursor:'pointer', fontSize:'0.8rem'}}>✏️</span></div><div style={{ fontSize: '0.75rem', color: '#64748b' }}>저장일시: {draft.date} / 진행: {draft.step}단계</div></div>
+                <div style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={() => handleLoadDraft(draft)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>불러오기</button><button type="button" onClick={() => handleDeleteDraft(draft.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button></div>
               </div>
             ))}
           </div>
@@ -502,8 +549,8 @@ function CoolingInspectionContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {completed.map(comp => (
               <div key={comp.id} style={{ padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #6ee7b7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div><div style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '4px' }}>{comp.siteText} - {comp.eqText}</div><div style={{ fontSize: '0.75rem', color: '#047857' }}>완료일시: {comp.date}</div></div>
-                <button type="button" onClick={() => { if(confirm('다시 열어보시겠습니까? 현재 내용은 덮어씌워집니다.')) { setSiteText(comp.siteText); setEqText(comp.eqText); setFormData(comp.formData); setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); } }} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>다시 열기</button>
+                <div><div style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '4px' }}>{comp.title || `${comp.siteText}-${comp.eqText}`} <span onClick={() => handleRenameComp(comp.id)} style={{cursor:'pointer', fontSize:'0.8rem'}}>✏️</span></div><div style={{ fontSize: '0.75rem', color: '#047857' }}>완료일시: {comp.date}</div></div>
+                <div style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={() => { if(confirm('다시 열어보시겠습니까? 현재 내용은 덮어씌워집니다.')) { setSiteText(comp.siteText); setEqText(comp.eqText); setFormData(comp.formData); setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); } }} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>다시 열기</button><button type="button" onClick={() => handleDeleteComp(comp.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button></div>
               </div>
             ))}
           </div>
