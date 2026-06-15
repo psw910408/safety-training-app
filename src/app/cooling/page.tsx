@@ -3,8 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import masterDataJson from '@/data/chillerMasterData.json';
+import pipeDataJson from '@/data/pipeMasterData.json';
 
 const masterData = masterDataJson as Record<string, ChillerData[]>;
+const pipeData = pipeDataJson as any;
 
 type ChillerData = {
   name: string;
@@ -20,47 +22,28 @@ type ChillerData = {
 const MATERIALS = ["", "카본스틸", "카본스틸/압력배관", "동관", "스테인레스"];
 const SIZES = ["", "8", "10", "15", "20", "25", "32", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300", "350", "400"];
 
-const PIPE_DICT: Record<string, {od: string, thick: string, sep: string}> = {
-  "카본스틸-200": { od: "216.3", thick: "5.85", sep: "187.511" },
-  "카본스틸-250": { od: "267.4", thick: "6.4", sep: "239.492" },
-  "카본스틸-300": { od: "318.5", thick: "7", sep: "291.669" },
-  "동관-200": { od: "206.38", thick: "5.08", sep: "153.92" },
-  "동관-250": { od: "257.18", thick: "6.35", sep: "203.236" },
-  "동관-150": { od: "159.0", thick: "5.18", sep: "104.64" },
-  "동관-125": { od: "133.0", thick: "3.18", sep: "79.9" },
-  "스테인레스스틸-250": { od: "267.4", thick: "3.4", sep: "227.6" },
-  "스테인레스-250": { od: "267.4", thick: "3.4", sep: "227.6" },
-  "카본스틸/압력배관-150": { od: "165.2", thick: "7.1", sep: "142.0" },
-  "카본스틸/압력배관-200": { od: "216.3", thick: "8.2", sep: "196.804" },
-  "카본스틸/압력배관-250": { od: "267.4", thick: "9.3", sep: "239.492" }
-};
-
-const STANDARD_OD: Record<string, string> = {
-  "8": "13.8", "10": "17.3", "15": "21.7", "20": "27.2", "25": "34.0", "32": "42.7", "40": "48.6", "50": "60.5", 
-  "65": "76.3", "80": "89.1", "100": "114.3", "125": "139.8", "150": "165.2", "200": "216.3", "250": "267.4", 
-  "300": "318.5", "350": "355.6", "400": "406.4"
-};
-
 const getPipeSpec = (mat: string, size: string) => {
   if (!mat || !size) return null;
-  const key = `${mat}-${size}`;
-  if (PIPE_DICT[key]) return PIPE_DICT[key];
   
-  // 기본 계산 로직 (사전에 없는 조합 방어)
-  if (mat === '동관' || mat === '동') {
-    const odMap: Record<string, string> = { "125": "133.0", "150": "159.0" };
-    const od = odMap[size] || (parseFloat(size) * 1.05).toFixed(1);
+  let type = 'carbon';
+  if (mat.includes('동')) type = 'copper';
+  else if (mat.includes('스테인레스')) type = 'stainless';
+  else if (mat.includes('카본스틸')) type = 'carbon';
+
+  // 엑셀에서 추출한 실제 데이터 사용
+  const spec = pipeData[type][size];
+  if (spec && spec.od && spec.thick) {
+    return { od: spec.od, thick: spec.thick, sep: spec.sep };
+  }
+  
+  // 데이터가 누락된 경우의 Fallback
+  if (type === 'copper') {
+    const od = (parseFloat(size) * 1.05).toFixed(1);
     return { od, thick: "4.0", sep: (parseFloat(od) * 0.7).toFixed(1) };
+  } else {
+    const od = (parseFloat(size) * 1.1).toFixed(1);
+    return { od, thick: "6.0", sep: (parseFloat(od) * 0.85).toFixed(1) };
   }
-  
-  if (STANDARD_OD[size]) {
-    const od = STANDARD_OD[size];
-    const thick = mat.includes('스테인레스') ? "3.4" : "6.0";
-    const sep = (parseFloat(od) * 0.85).toFixed(1);
-    return { od, thick, sep };
-  }
-  
-  return null;
 };
 
 const INITIAL_FORM = {
