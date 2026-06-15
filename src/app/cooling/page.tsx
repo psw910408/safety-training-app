@@ -17,6 +17,20 @@ type ChillerData = {
   coolingWaterPipe: { size: string, material: string, outerDiameter: string, thickness: string, separation: string };
 };
 
+const PIPE_DICT: Record<string, {od: string, thick: string, sep: string}> = {
+  "카본스틸-200": { od: "216.3", thick: "5.85", sep: "187.511" },
+  "카본스틸-250": { od: "267.4", thick: "6.4", sep: "239.492" },
+  "카본스틸-300": { od: "318.5", thick: "7", sep: "291.669" },
+  "동관-200": { od: "206.38", thick: "5.08", sep: "153.92" },
+  "동관-250": { od: "257.18", thick: "6.35", sep: "203.236" },
+  "동-150": { od: "159.0", thick: "5.18", sep: "104.64" },
+  "동-125": { od: "133.0", thick: "3.18", sep: "79.9" },
+  "스테인레스스틸-250": { od: "267.4", thick: "3.4", sep: "227.6" },
+  "카본스틸/압력배관-150": { od: "165.2", thick: "7.1", sep: "142.0" },
+  "카본스틸/압력배관-200": { od: "216.3", thick: "8.2", sep: "196.804" },
+  "카본스틸/압력배관-250": { od: "267.4", thick: "9.3", sep: "239.492" }
+};
+
 const INITIAL_FORM = {
   // 냉수 배관 규격 (Step 2)
   chilledPipeMat: '', chilledPipeSize: '', chilledPipeOD: '', chilledPipeThick: '', chilledPipeSep: '',
@@ -45,7 +59,6 @@ const INITIAL_FORM = {
 };
 
 function CoolingInspectionContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const defaultSite = searchParams.get('site') === 'samhwa' ? '삼화타워' : '종로타워';
   
@@ -56,25 +69,25 @@ function CoolingInspectionContent() {
   const [eqSpecs, setEqSpecs] = useState<ChillerData | null>(null);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  
   const [drafts, setDrafts] = useState<any[]>([]);
+  const [completed, setCompleted] = useState<any[]>([]);
   const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
 
-  // 로컬 스토리지 키
   const STORAGE_KEY = 'cooling_inspection_drafts';
+  const COMPLETED_KEY = 'cooling_inspection_completed';
 
-  // 로드 로직
   useEffect(() => {
     const backup = localStorage.getItem(STORAGE_KEY);
     if (backup) {
-      try {
-        setDrafts(JSON.parse(backup));
-      } catch (e) {
-        console.error('Drafts load failed', e);
-      }
+      try { setDrafts(JSON.parse(backup)); } catch (e) {}
+    }
+    const comp = localStorage.getItem(COMPLETED_KEY);
+    if (comp) {
+      try { setCompleted(JSON.parse(comp)); } catch (e) {}
     }
   }, []);
 
-  // 중간 저장 로직
   const handleSaveDraft = () => {
     const timeStr = new Date().toLocaleString();
     const newDraft = {
@@ -119,7 +132,6 @@ function CoolingInspectionContent() {
     }
   };
 
-  // 자동완성 데이터 매칭
   useEffect(() => {
     const siteEqs = masterData[siteText] || [];
     const matchedEq = siteEqs.find(e => e.name === eqText);
@@ -144,21 +156,69 @@ function CoolingInspectionContent() {
   }, [siteText, eqText]);
 
   const handleChange = (e: any) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let newFormData = { ...formData, [name]: value };
+
+    // Auto-fill dictionary logic for pipe dimensions
+    if (name === 'chilledPipeMat' || name === 'chilledPipeSize') {
+      const mat = name === 'chilledPipeMat' ? value : formData.chilledPipeMat;
+      const size = name === 'chilledPipeSize' ? value : formData.chilledPipeSize;
+      const key = `${mat}-${size}`;
+      if (PIPE_DICT[key]) {
+        newFormData.chilledPipeOD = PIPE_DICT[key].od;
+        newFormData.chilledPipeThick = PIPE_DICT[key].thick;
+        newFormData.chilledPipeSep = PIPE_DICT[key].sep;
+      }
+    }
+    if (name === 'coolingPipeMat' || name === 'coolingPipeSize') {
+      const mat = name === 'coolingPipeMat' ? value : formData.coolingPipeMat;
+      const size = name === 'coolingPipeSize' ? value : formData.coolingPipeSize;
+      const key = `${mat}-${size}`;
+      if (PIPE_DICT[key]) {
+        newFormData.coolingPipeOD = PIPE_DICT[key].od;
+        newFormData.coolingPipeThick = PIPE_DICT[key].thick;
+        newFormData.coolingPipeSep = PIPE_DICT[key].sep;
+      }
+    }
+
+    setFormData(newFormData);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('냉방점검 최종 데이터가 성공적으로 처리되었습니다!');
+    const timeStr = new Date().toLocaleString();
+    const newComp = {
+      id: Date.now(),
+      siteText,
+      eqText: eqText || '기기 미지정',
+      date: timeStr,
+      formData
+    };
+
+    const updatedComp = [newComp, ...completed];
+    setCompleted(updatedComp);
+    localStorage.setItem(COMPLETED_KEY, JSON.stringify(updatedComp));
+
     if (currentDraftId) {
-      const updated = drafts.filter(d => d.id !== currentDraftId);
-      setDrafts(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      const updatedDrafts = drafts.filter(d => d.id !== currentDraftId);
+      setDrafts(updatedDrafts);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDrafts));
     }
-    router.push('/');
+
+    alert('✅ 점검 데이터가 최종 완료되어 하단 보관함에 저장되었습니다!');
+    
+    // 폼 초기화 및 화면 이동
+    setFormData(INITIAL_FORM);
+    setSiteText(defaultSite);
+    setEqText('');
+    setCurrentDraftId(null);
+    setStep(1);
+    
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }, 100);
   };
 
-  // 계산 유틸리티
   const calcDiff = (inTemp: string, outTemp: string) => {
     const vIn = parseFloat(inTemp);
     const vOut = parseFloat(outTemp);
@@ -172,7 +232,6 @@ function CoolingInspectionContent() {
     const vOut = parseFloat(outTemp);
     if (isNaN(vLpm) || isNaN(vIn) || isNaN(vOut)) return '-';
     const diff = vIn - vOut;
-    // RT = LPM * 60 * 온도차 / 3024
     return ((vLpm * 60 * diff) / 3024).toFixed(1);
   };
 
@@ -205,7 +264,7 @@ function CoolingInspectionContent() {
             borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem',
             cursor: 'pointer', transition: 'all 0.2s'
           }}>
-            S {num}
+            {num}단계
           </div>
         ))}
       </div>
@@ -266,8 +325,8 @@ function CoolingInspectionContent() {
             <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #0369a1', marginBottom: '16px' }}>
               <h4 style={{ color: '#0369a1', marginBottom: '12px' }}>🔵 냉수 배관 규격</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="chilledPipeMat" className="input-field" value={formData.chilledPipeMat} onChange={handleChange} /></div>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="chilledPipeSize" className="input-field" value={formData.chilledPipeSize} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="chilledPipeMat" className="input-field" value={formData.chilledPipeMat} onChange={handleChange} placeholder="ex) 카본스틸" /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="chilledPipeSize" className="input-field" value={formData.chilledPipeSize} onChange={handleChange} placeholder="ex) 200" /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="chilledPipeOD" className="input-field" value={formData.chilledPipeOD} onChange={handleChange} /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="chilledPipeThick" className="input-field" value={formData.chilledPipeThick} onChange={handleChange} /></div>
                 <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="chilledPipeSep" className="input-field" value={formData.chilledPipeSep} onChange={handleChange} /></div>
@@ -277,8 +336,8 @@ function CoolingInspectionContent() {
             <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #15803d', marginBottom: '24px' }}>
               <h4 style={{ color: '#15803d', marginBottom: '12px' }}>🟢 냉각수 배관 규격</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="coolingPipeMat" className="input-field" value={formData.coolingPipeMat} onChange={handleChange} /></div>
-                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="coolingPipeSize" className="input-field" value={formData.coolingPipeSize} onChange={handleChange} /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>재질</label><input type="text" name="coolingPipeMat" className="input-field" value={formData.coolingPipeMat} onChange={handleChange} placeholder="ex) 동관" /></div>
+                <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>호칭(A)</label><input type="text" name="coolingPipeSize" className="input-field" value={formData.coolingPipeSize} onChange={handleChange} placeholder="ex) 250" /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>외경 (mm)</label><input type="text" name="coolingPipeOD" className="input-field" value={formData.coolingPipeOD} onChange={handleChange} /></div>
                 <div><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>두께 (mm)</label><input type="text" name="coolingPipeThick" className="input-field" value={formData.coolingPipeThick} onChange={handleChange} /></div>
                 <div style={{ gridColumn: '1 / span 2' }}><label style={{fontSize:'0.8rem', fontWeight:'bold'}}>센서 이격거리 (mm)</label><input type="text" name="coolingPipeSep" className="input-field" value={formData.coolingPipeSep} onChange={handleChange} /></div>
@@ -286,7 +345,7 @@ function CoolingInspectionContent() {
             </div>
 
             <div style={{ padding: '16px', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fcd34d', fontSize: '0.9rem', color: '#b45309', marginBottom: '24px' }}>
-              ℹ️ 스텝 1에서 마스터 데이터와 연동된 기기라면 위 정보가 자동으로 채워집니다! 엑셀 데이터가 없는 새로운 기기이거나 현장 상황이 다르면 직접 수기로 입력/수정하세요.
+              ℹ️ 재질과 호칭을 기입하면 외경, 두께, 센서이격거리가 <strong>사전 기반으로 자동 입력</strong>됩니다! (수기로 덮어쓰기도 가능합니다)
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
@@ -438,13 +497,13 @@ function CoolingInspectionContent() {
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <button type="button" className="btn" style={{ background: '#64748b', flex: '1' }} onClick={() => setStep(3)}>⬅ 이전</button>
-              <button type="submit" className="btn" style={{ flex: '2', background: '#10b981' }}>✅ 최종 완료 및 서버 전송</button>
+              <button type="submit" className="btn" style={{ flex: '2', background: '#10b981' }}>✅ 최종 완료 및 저장</button>
             </div>
           </div>
         )}
       </form>
 
-      {/* 보관함 (모든 스텝에서 공통 노출) */}
+      {/* 보관함 (임시 저장본) */}
       {drafts.length > 0 && (
         <div style={{ marginTop: '32px', borderTop: '2px dashed #cbd5e1', paddingTop: '16px', animation: 'fadeIn 0.3s ease' }}>
           <h4 style={{ marginBottom: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -455,7 +514,7 @@ function CoolingInspectionContent() {
               <div key={draft.id} style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}>{draft.siteText || '사옥 미지정'} - {draft.eqText}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>저장일시: {draft.date} / 진행: Step {draft.step}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>저장일시: {draft.date} / 진행: {draft.step}단계</div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button type="button" onClick={() => handleLoadDraft(draft)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>불러오기</button>
@@ -466,6 +525,37 @@ function CoolingInspectionContent() {
           </div>
         </div>
       )}
+
+      {/* 최종 완료 보관함 */}
+      {completed.length > 0 && (
+        <div style={{ marginTop: '24px', borderTop: '2px solid #10b981', paddingTop: '16px', animation: 'fadeIn 0.3s ease' }}>
+          <h4 style={{ marginBottom: '12px', color: '#047857', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>✅</span> 최종 완료된 점검 파일 ({completed.length}건)
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {completed.map(comp => (
+              <div key={comp.id} style={{ padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #6ee7b7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '4px' }}>{comp.siteText} - {comp.eqText}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#047857' }}>완료일시: {comp.date}</div>
+                </div>
+                <button type="button" onClick={() => {
+                  if(confirm('완료된 파일을 다시 열어보시겠습니까? 현재 작성중인 내용은 덮어씌워집니다.')) {
+                     setSiteText(comp.siteText);
+                     setEqText(comp.eqText);
+                     setFormData(comp.formData);
+                     setStep(1);
+                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>
+                  다시 열기
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
