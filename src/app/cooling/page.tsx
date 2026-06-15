@@ -17,7 +17,7 @@ type ChillerData = {
   coolingWaterPipe: { size: string, material: string, outerDiameter: string, thickness: string, separation: string };
 };
 
-const MATERIALS = ["", "카본스틸", "카본스틸/압력배관", "동관", "동", "스테인레스"];
+const MATERIALS = ["", "카본스틸", "카본스틸/압력배관", "동관", "스테인레스"];
 const SIZES = ["", "8", "10", "15", "20", "25", "32", "40", "50", "65", "80", "100", "125", "150", "200", "250", "300", "350", "400"];
 
 const PIPE_DICT: Record<string, {od: string, thick: string, sep: string}> = {
@@ -26,8 +26,8 @@ const PIPE_DICT: Record<string, {od: string, thick: string, sep: string}> = {
   "카본스틸-300": { od: "318.5", thick: "7", sep: "291.669" },
   "동관-200": { od: "206.38", thick: "5.08", sep: "153.92" },
   "동관-250": { od: "257.18", thick: "6.35", sep: "203.236" },
-  "동-150": { od: "159.0", thick: "5.18", sep: "104.64" },
-  "동-125": { od: "133.0", thick: "3.18", sep: "79.9" },
+  "동관-150": { od: "159.0", thick: "5.18", sep: "104.64" },
+  "동관-125": { od: "133.0", thick: "3.18", sep: "79.9" },
   "스테인레스스틸-250": { od: "267.4", thick: "3.4", sep: "227.6" },
   "스테인레스-250": { od: "267.4", thick: "3.4", sep: "227.6" },
   "카본스틸/압력배관-150": { od: "165.2", thick: "7.1", sep: "142.0" },
@@ -138,7 +138,11 @@ function CoolingInspectionContent() {
     const matchedEq = siteEqs.find(e => e.name === eqText);
     setEqSpecs(matchedEq || null);
 
-    const normalizeMat = (m: string) => m.includes('스테인레스') ? '스테인레스' : m;
+    const normalizeMat = (m: string) => {
+      if (m.includes('스테인레스')) return '스테인레스';
+      if (m === '동') return '동관';
+      return m;
+    };
     const normalizeSize = (s: string) => s.toLowerCase().replace(/a$/, '').trim();
 
     if (matchedEq) {
